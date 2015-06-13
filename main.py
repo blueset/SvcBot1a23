@@ -4,7 +4,7 @@ from pytg.utils import coroutine
 from pprint import pprint
 from daemon import daemon
 from AJINC import AJINCAPI
-import LMSAPI.MSAPI
+import LMSAPI.LMSAPI
 import sqlite3
 import sys
 import json
@@ -50,6 +50,8 @@ logging.basicConfig(
 GOO_GL_API_KEY = config.GOO_GL_API_KEY
 ROOT_PATH = config.ROOT_PATH
 DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
+TELEGRAM_DIR = config.TELEGRAM_DIR
+TELEGRAM_CERT = config.TELEGRAM_CERT
 
 #if DEVELOPEMENT_MODE:
 #	logging.basicConfig(level=logging.DEBUG, filename="svcbot.log")
@@ -533,8 +535,8 @@ For enquires and feedback, please contact @blueset .
 class MyDaemon(daemon):
 	def run(self):
 		tg = Telegram(
-		    telegram="/Users/blueset/tg/bin/telegram-cli",
-		    pubkey_file="/Users/blueset/tg/bin/tg-server.pub")
+		    telegram=TELEGRAM_DIR,
+		    pubkey_file=TELEGRAM_CERT)
 		global sender
 		receiver = tg.receiver
 		sender = tg.sender
