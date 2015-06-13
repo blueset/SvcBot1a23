@@ -1,0 +1,3 @@
+[submodule "LMSAPI"]
+	path = LMSAPI
+	url = /Users/blueset/Python Scripts/LMSAPI
