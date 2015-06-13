@@ -4,7 +4,7 @@ from pytg.utils import coroutine
 from pprint import pprint
 from daemon import daemon
 from AJINC import AJINCAPI
-import LMSAPI
+import LMSAPI.MSAPI
 import sqlite3
 import sys
 import json
