@@ -395,7 +395,6 @@ For enquires and feedback, please contact @blueset .
 				l = LMSAPI.LMSAPI()
 				l.login_pid (puid, school)
 				lmsxml = l.get_announcements()
-				dprint(lmsxml)
 				lmsA = l.parse_announcements(lmsxml)
 			ajincA = AJINCAPI.check_announcements(None)
 			an = "Here are the list of announcements. \n\n"
