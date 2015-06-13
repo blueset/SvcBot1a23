@@ -52,6 +52,7 @@ ROOT_PATH = config.ROOT_PATH
 DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
+SELF = config.SELF
 
 #if DEVELOPEMENT_MODE:
 #	logging.basicConfig(level=logging.DEBUG, filename="svcbot.log")
@@ -97,8 +98,6 @@ class SvcBot:
 			self._clear_status(uid)
 			self._send("Action has been cancelled. What else can I do for you?", uid)
 			return
-
-		dprint ("coming message", msg, ": Status ==>", self._get_status(uid))
 		if (not self._get_status(uid) == None):
 			fn = getattr(self, self._get_status(uid))
 			fn(msg, uid)
@@ -340,7 +339,6 @@ For enquires and feedback, please contact @blueset .
 		if len(r) == 0:
 			msg += "There is no update."
 		for res in r:
-			pprint(res)
 			res.url = self._shortern_url(res.url)
 			msg += ("["+str(res.create_time)+"] " + str(res.title) + 
 					"\n - - From: " + res.course_name + "/" + res.section_name + 
@@ -550,11 +548,10 @@ def main_loop():
 	while True:
 		msg = (yield) 
 		try:
-			if (msg.event == "message"):
+			if (msg.event == "message" and msg.receiver.cmd == SELF):
 				SvcBot(msg.text, msg.sender.cmd)
 		except:
 			dprint("Not a message")
-			pprint(msg)
 
 if (__name__ == "__main__"):
 	daemon = MyDaemon('/tmp/daemon-example.pid')
