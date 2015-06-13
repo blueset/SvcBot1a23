@@ -244,7 +244,7 @@ class SvcBot:
 
 		:rtype :
 		"""
-        return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid, )).fetchall()[0]
+		return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid, )).fetchall()[0]
 	def _shortern_url(self, url):
 		return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
 	# 
