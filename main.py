@@ -53,10 +53,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-
-#if DEVELOPEMENT_MODE:
-#	logging.basicConfig(level=logging.DEBUG, filename="svcbot.log")
-	
+VERSION = "ver 0.1.0 build 20150613"
 
 def dprint(*arg):
 	if DEVELOPEMENT_MODE:
@@ -105,7 +102,7 @@ class SvcBot:
 
 		if (msg[:1] == '/'):
 			para = msg[1:].split()
-			if para[0][:1] == '_':
+			if para[0][:1] == '_' and not DEVELOPEMENT_MODE:
 				self._send_error(9, uid)
 				return
 			try:
@@ -217,8 +214,11 @@ class SvcBot:
 			return False
 
 	def _delete_LMS_account(self, uid):
-		self._c.execute("DELETE FROM LMS WHERE uid = ", (uid, ))
-		self._db.commit()		
+		print('before', uid)
+		self._c.execute("DELETE FROM LMS WHERE uid = ?", (uid, ))
+		print ('between')
+		self._db.commit()
+		print ('end')		
 
 	def _get_LMS_puid_school(self, uid):
 		return self._c.execute('SELECT puid, school FROM LMS WHERE uid = ?', (uid, )).fetchall()[0]
@@ -251,7 +251,7 @@ class SvcBot:
 	# 
 
 	def help (self, msg, uid):
-		help_msg = r"""1A23 Service Bot ver 0.0.1 build 20150601
+		help_msg = r"""1A23 Service Bot
 
 @SvcBot1a23 is currently in alpha test stage. You are welcomed to provide any suggestions. 
 
@@ -284,13 +284,14 @@ For enquires and feedback, please contact @blueset .
 		self.help(msg, uid)
 
 	def about (self, msg, uid):
-		about_msg = r"""1A23 Service Bot brought to you by 1A23.com
+		about_msg = r"""1A23 Service Bot (Version %s) brought to you by 1A23.com
 
 @SvcBot1A23 is currently in alpha test stage. You are welcomed to provide any suggestions. 
 
 For enquires and feedback, please contact @blueset .
 """
-		self._send(about_msg, uid)
+
+		self._send(about_msg % VERSION, uid)
 
 	def loginLMS(self, msg, uid):
 		if self._is_LMS_logged_in(uid):
@@ -305,6 +306,7 @@ For enquires and feedback, please contact @blueset .
 	def logoutLMS(self, msg, uid):
 		if self._is_LMS_logged_in(uid):
 			self._delete_LMS_account(uid)
+			self._send("Done.", uid)
 		else:
 			self._send_error(5, uid)
 
@@ -493,10 +495,12 @@ For enquires and feedback, please contact @blueset .
 			dprint("logging in", username, password, school)
 			l.login(username, password, school)
 		except LMSAPI.LMSAPILoginError as e:
+			if (str(e) == 'ErrorCode 1:Index was outside the bounds of the array.'):
+				e = "The communication to LMS has some problem for now. Please try again in 5 minutes. (Yea, I really mean it.) " + str(e)
 			self._send_error(2, uid, error_msg=str(e))
 			return
 		hint_msg = "You have successfully logged in."
-		self._add_LMS_account(username, password, school, l.pid.decode('ascii'), uid)
+		self._add_LMS_account(username, password, school, l.pid, uid)
 		self._send(hint_msg, uid)
 		self._clear_status()
 
@@ -546,11 +550,10 @@ class MyDaemon(daemon):
 def main_loop():
 	while True:
 		msg = (yield) 
-		try:
-			if (msg.event == "message" and msg.receiver.cmd == SELF):
-				SvcBot(msg.text, msg.sender.cmd)
-		except:
-			dprint("Not a message")
+		if (msg.event == "message" and msg.receiver.cmd == SELF):
+			SvcBot(msg.text, msg.sender.cmd)
+		else: 
+			dprint("Not a message:", msg.event)
 
 if (__name__ == "__main__"):
 	daemon = MyDaemon('/tmp/daemon-example.pid')
