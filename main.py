@@ -512,7 +512,7 @@ Currently available channels are:
 ?,
 1)"""
 		self._c.execute(query, (uid, msg, uid, msg))
-		self._send("You are now subscribed to %s." % msg)
+		self._send("You are now subscribed to %s." % msg, uid)
 
 
 	def unsub(self, msg, uid):
@@ -526,7 +526,7 @@ Currently available channels are:
 ?,
 0)"""
 		self._c.execute(query, (uid, msg, uid, msg))
-		self._send("You are now unsubscribe from %s." % msg)
+		self._send("You are now unsubscribe from %s." % msg, uid)
 
 	#
 	# Status commands
