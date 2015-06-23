@@ -65,8 +65,8 @@ class SvcBot:
 	_c = None
 	_LMSschoolList = ['ANDERSON_JC']
 	_error_list = [
-		"Command not found. Please send /help to get the list of commands.", #0
-		"Not a command. Please send /help to get the list of commands.", #1
+		"Command not found. Please send /h to get the list of commands.", #0
+		"Not a command. Please send /h to get the list of commands.", #1
 		"Error occured while logging in LMS.", #2
 		"User not found.", #3
 		"Invalid School ID.", #4
@@ -77,18 +77,20 @@ class SvcBot:
 		"You don't play-play ah." #9 for calling on private methods
 	]
 
+	_services = ['LMSdaily', 'attendance']
+
 	# 
 	# Init & Helpers
 	# 
 
-	def __init__(self, msg, tid):
-		# Debug info
-		if (msg[:1] == "!"):
-			return
+	def __init__(self, msg, tid, group = False):
 
 		# init
 		self._db = sqlite3.connect(ROOT_PATH + 'database.db')
 		self._c = self._db.cursor()
+		# Debug info
+		if (msg[:1] == "!"):
+			return
 		uid = self._get_uid(tid)
 
 		if (msg[:7] == "/cancel"):
@@ -152,6 +154,7 @@ class SvcBot:
 		pass
 
 	def _send(self, msg, uid):
+		global sender
 		tid = self._get_tid(uid)
 		msg = msg.splitlines()
 		for i in range(int(len(msg) / 40)):
@@ -246,6 +249,14 @@ class SvcBot:
 		return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid, )).fetchall()[0]
 	def _shortern_url(self, url):
 		return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
+
+	def _get_LMSdaily_subscribers(self):
+		result = self._c.execute('SELECT uid FROM config WHERE "key" == "LMSdaily" AND "value" = "1"').fetchall()
+		return [a[0] for a in result]
+
+	def _get_attendance_subscribers(self):
+		result = self._c.execute('SELECT uid FROM config WHERE "key" == "attendance" AND "value" = "1"').fetchall()
+		return [a[0] for a in result]
 	# 
 	# Commands
 	# 
@@ -258,12 +269,12 @@ class SvcBot:
 You can use this bot by sending the following commands.
 
 /help - Show this help message. 
-/h - Show this help message.
-/loginLMS - Login LMS Account.
+/h - Show a concise help message.
+/loginLMS - Log into LMS.
 /logoutLMS - Log out from LMS.
-/loginAJINC - Login AJINC account.
+/loginAJINC - Log into AJINC.
 /logoutAJINC - Log out from AJINC.
-/LMSdaily - Resend LMS Daily.
+/LMSdaily - Check LMS updates.
 /LMSdaily 10 - Check LMS updates in the recent 10 days. (Number of days must be between 1 and 30 inclusive.)
 /attendance - Check attendance for today.
 /attendance 8 31 - Check attendance on 8/31 (31st of August).
@@ -271,17 +282,33 @@ You can use this bot by sending the following commands.
 /about - About this bot.
 /announcements - Check announcements from both LMS and AJINC.
 /announcements (LMS|AJINC) number - Show detail of one announcement. e.g.: "/announcements LMS 3"
+/sub <channel_name> - Subscribe to a channel. 
+/unsub <channel_name> - Unsubscribe from a channel.
 
 === Not Available for now ===
 /searchLMS keyword - Search resources in LMS.
-/settings - Change setting of timed notifications.
 
 For enquires and feedback, please contact @blueset .
 """
 		self._send(help_msg, uid)
 
 	def h (self, msg, uid):
-		self.help(msg, uid)
+		help_msg = "1A23 Service Bot\n\nSend the following messages to control this bot.\n\n/announcements - Check announcements"
+		lmsL = self._is_AJINC_logged_in(uid)
+		ajincL = self._is_AJINC_logged_in(uid)
+		if lmsL:
+			help_msg += "/LMSdaily - Check LMS updates.\n"
+		else: 
+			help_msg += "/loginLMS - Login LMS account. \n"
+		if ajincL:
+			help_msg += "/attendance - Check your attendance for today.\n" 
+		else:
+			help_msg += "/loginAJINC - Login AJINC account.\n"
+		if lmsL or ajincL:
+			help_msg += "/sub - Subscribe to a channel.\n"
+		help_msg += "\nFor a more detailed help message, reply /help ."
+		self._send(help_msg, uid)
+		#self.help(msg, uid)
 
 	def about (self, msg, uid):
 		about_msg = r"""1A23 Service Bot (Version %s) brought to you by 1A23.com
@@ -306,7 +333,7 @@ For enquires and feedback, please contact @blueset .
 	def logoutLMS(self, msg, uid):
 		if self._is_LMS_logged_in(uid):
 			self._delete_LMS_account(uid)
-			self._send("Done.", uid)
+			self._send("You've been successfully logged out from LMS.", uid)
 		else:
 			self._send_error(5, uid)
 
@@ -320,7 +347,7 @@ For enquires and feedback, please contact @blueset .
 			try: 
 				days = int(msg)
 			except:
-				self._send_error(6, uid, error_msg="Parameter is not number of days.")
+				self._send_error(6, uid, error_msg="%s is not number of days." % msg)
 				return
 			if days < 1 or days > 30: 
 				self._send_error(6, uid, error_msg="Number of days must be between 1 and 30 inclusive.")
@@ -361,6 +388,7 @@ For enquires and feedback, please contact @blueset .
 	def logoutAJINC(self, msg, uid):
 		if self._is_AJINC_logged_in(uid):
 			self._delete_AJINC_account(uid)
+			self._send("You are successfully logged out of AJINC.", uid)
 		else:
 			self._send_error(5, uid)
 
@@ -463,6 +491,43 @@ For enquires and feedback, please contact @blueset .
 			else:
 				self._send_error(6, uid, "Source must be either LMS or AJINC.")
 				return
+
+	def sub(self, msg, uid):
+		if msg == '':
+			msg = """Subscribe to a service.
+After subscribing to it, you can receive daily messages of that channel.
+
+Currently available channels are:
+"""
+			msg = msg + "\n".join(self._services)
+			self._send(msg, uid)
+			return
+		if not msg in self._services:
+			error_msg = "%s is not an available service. \nYou can subscribe to the following:\n%s" % (msg, "\n".join(self._services))
+			self._send_error(6, uid, error_msg = error_msg)
+			return
+		query = """INSERT OR REPLACE INTO config (id, uid, `key`, value) VALUES (
+(SELECT id FROM config WHERE uid = ? AND `key` = ?), 
+?,
+?,
+1)"""
+		self._c.execute(query, (uid, msg, uid, msg))
+		self._send("You are now subscribed to %s." % msg)
+
+
+	def unsub(self, msg, uid):
+		if not msg in self._services:
+			error_msg = "%s is not an available service. \nYou can unsubscribe from the following:\n%s" % (msg, "\n".join(self._services))
+			self._send_error(6, uid, error_msg = error_msg)
+			return
+		query = """INSERT OR REPLACE INTO config (id, uid, `key`, value) VALUES (
+(SELECT id FROM config WHERE uid = ? AND `key` = ?),
+?,
+?,
+0)"""
+		self._c.execute(query, (uid, msg, uid, msg))
+		self._send("You are now unsubscribe from %s." % msg)
+
 	#
 	# Status commands
 	# 
