@@ -1,5 +1,7 @@
 # coding=utf-8
-from pytg import Telegram
+
+"""1A23 Service Bot Telegram Bot API version"""
+
 from pytg.utils import coroutine
 from pprint import pprint
 from daemon import daemon
@@ -12,6 +14,17 @@ import requests
 import logging
 import traceback 
 import config
+
+# Constants
+
+GOO_GL_API_KEY = config.GOO_GL_API_KEY
+ROOT_PATH = config.ROOT_PATH
+DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
+TELEGRAM_DIR = config.TELEGRAM_DIR
+TELEGRAM_CERT = config.TELEGRAM_CERT
+SELF = config.SELF
+VERSION = "ver 0.1.0 build 20150625"
+BOT_KEY = config.BOT_KEY
 
 # Redirect STDOUT and STDERR to logger
 class StreamToLogger(object):
@@ -33,7 +46,7 @@ class StreamToLogger(object):
 logging.basicConfig(
    level=logging.DEBUG,
    format='[ %(asctime)s : %(levelname)s : %(name)s ] %(message)s',
-   filename="svcbot.log",
+   filename=ROOT_PATH+"svcbot.log",
    filemode='a'
 )
  
@@ -45,15 +58,6 @@ logging.basicConfig(
 #sl = StreamToLogger(stderr_logger, logging.ERROR)
 #sys.stderr = sl
 
-# Constants
-
-GOO_GL_API_KEY = config.GOO_GL_API_KEY
-ROOT_PATH = config.ROOT_PATH
-DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
-TELEGRAM_DIR = config.TELEGRAM_DIR
-TELEGRAM_CERT = config.TELEGRAM_CERT
-SELF = config.SELF
-VERSION = "ver 0.1.0 build 20150613"
 
 def dprint(*arg):
 	if DEVELOPEMENT_MODE:
@@ -83,11 +87,17 @@ class SvcBot:
 	# Init & Helpers
 	# 
 
-	def __init__(self, msg, tid, group = False):
+	def __init__(self, json_obj):
 
 		# init
 		self._db = sqlite3.connect(ROOT_PATH + 'database.db')
 		self._c = self._db.cursor()
+		try:
+			msg = json_obj['message']['text']
+			tid = json_obj['message']['from']['id']
+		except:
+			return
+
 		# Debug info
 		if (msg[:1] == "!"):
 			return
@@ -142,7 +152,8 @@ class SvcBot:
 		msg = "Error %s: %s (%s)" % (error_id, self._error_list[error_id], error_msg)
 		if DEVELOPEMENT_MODE: 
 			msg += "\n\nDebug info:\n" + debug_info;
-		self._send(msg, uid)
+		reply_markup = {'hide_keyboard': True}
+		self._send(msg, uid, reply_markup=reply_markup)
 
 		if clear_status:
 			self._clear_status(uid)
@@ -153,24 +164,35 @@ class SvcBot:
 		self._db.commit()
 		pass
 
-	def _send(self, msg, uid):
-		global sender
+	def _send(self, msg, uid, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
 		tid = self._get_tid(uid)
 		msg = msg.splitlines()
+		payload = {'chat_id': tid, 'text': msg}
+		if not disable_web_page_preview == None: 
+			payload['disable_web_page_preview'] = disable_web_page_preview
+		if not reply_to_message_id == None:
+			payload['reply_to_message_id'] = reply_to_message_id
+		if not reply_markup == None:
+			payload['reply_markup'] = json.dumps(reply_markup, separators=(',',':'))
+
 		for i in range(int(len(msg) / 40)):
 			batch = "["+str(i+1)+"/"+str(int(len(msg) / 40)+1)+"] \n"
 			batch += "\n".join(msg[40*i:40*(i+1)-1])
 			if DEVELOPEMENT_MODE:
 				batch = "![ 1A23SvcBot ]\n" + batch
-			sender.send_msg(tid, batch)
+			payload['text'] = batch
+			self._HTTP_req('sendMessage',payload)
+
 		if int(len(msg) / 40) > 0:
 			batch = "["+str(int(len(msg) / 40)+1)+"/"+str(int(len(msg) / 40)+1)+"] \n"
 		else:
 			batch = ""
+
 		batch += "\n".join(msg[40*int(len(msg) / 40):])
 		if DEVELOPEMENT_MODE:
 			batch = "![ 1A23SvcBot ]\n" + batch
-		sender.send_msg(tid, batch)
+		payload['text'] = batch
+		self._HTTP_req('sendMessage', payload)
 
 	def _set_status(self, status, uid):
 		print("yay")
@@ -257,6 +279,15 @@ class SvcBot:
 	def _get_attendance_subscribers(self):
 		result = self._c.execute('SELECT uid FROM config WHERE "key" == "attendance" AND "value" = "1"').fetchall()
 		return [a[0] for a in result]
+
+	def _HTTP_req(self, method, payload):
+		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
+		import urllib
+		#print('Request')
+		#pprint(req.request.body)
+		#print('Response')
+		#pprint(req.text)
+		return req.json
 	# 
 	# Commands
 	# 
@@ -427,17 +458,22 @@ For enquires and feedback, please contact @blueset .
 				lmsxml = l.get_announcements()
 				lmsA = l.parse_announcements(lmsxml)
 			ajincA = AJINCAPI.check_announcements(None)
+
+			keylist = []
+
 			an = "Here are the list of announcements. \n\n"
 			if not lms:
 				an += "You havent logged into LMS. \n"
 			else: 
 				for key, item in enumerate(lmsA):
 					an += "[ LMS %s ] %s\n" % (key, item.title)
+					keylist.append(["/ann LMS %s %s" % (key, item.title)])
 			for key, item in enumerate(ajincA):
 				an += "[ AJINC %s ] %s\n" % (key, item['title'])
-
+				keylist.append(["/ann AJINC %s %s" % (key, item['title'])])
 			an += "\nReply /announcements (LMS|AJINC) id for detial."
-			self._send(an, uid)
+			reply_markup = {"keyboard": keylist, "one_time_keyboard": True}
+			self._send(an, uid, reply_markup = reply_markup)
 			return
 		else:
 			from datetime import datetime
@@ -492,6 +528,9 @@ For enquires and feedback, please contact @blueset .
 				self._send_error(6, uid, "Source must be either LMS or AJINC.")
 				return
 
+	def ann(self, msg, uid):
+		self.announcements(msg, uid)
+
 	def sub(self, msg, uid):
 		if msg == '':
 			msg = """Subscribe to a service.
@@ -500,7 +539,9 @@ After subscribing to it, you can receive daily messages of that channel.
 Currently available channels are:
 """
 			msg = msg + "\n".join(self._services)
-			self._send(msg, uid)
+			keylist = [["/sub "+svc] for svc in self._services]
+			reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
+			self._send(msg, uid, reply_markup=reply_markup)
 			return
 		if not msg in self._services:
 			error_msg = "%s is not an available service. \nYou can subscribe to the following:\n%s" % (msg, "\n".join(self._services))
@@ -519,7 +560,9 @@ Currently available channels are:
 	def unsub(self, msg, uid):
 		if not msg in self._services:
 			error_msg = "%s is not an available service. \nYou can unsubscribe from the following:\n%s" % (msg, "\n".join(self._services))
-			self._send_error(6, uid, error_msg = error_msg)
+			keylist = [["/unsub "+svc] for svc in self._services]
+			reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
+			self._send(msg, uid, reply_markup=reply_markup)
 			return
 		query = """INSERT OR REPLACE INTO config (id, uid, `key`, value) VALUES (
 (SELECT id FROM config WHERE uid = ? AND `key` = ?),
@@ -545,13 +588,17 @@ Currently available channels are:
 		self._set_status("_loginLMSsc", uid)
 		self._set_status_para("LMSpw", msg, uid)
 		hint_msg = "Please reply the number of your school, or reply /cancel to quit. \n We will add more schools along the way. \n\n"
+		keylist = []
 		for i in range(len(self._LMSschoolList)):
-			hint_msg += str(i)+": "+self._LMSschoolList[i]+"\n"
-		self._send(hint_msg, uid)
+			keylist.append([str(i)+" "+self._LMSschoolList[i]])
+			hint_msg += str(i)+" "+self._LMSschoolList[i]+"\n"
+		reply_markup = {"keyboard": keylist, "one_time_keyboard": True}
+		self._send(hint_msg, uid, reply_markup=reply_markup)
 
 	def _loginLMSsc(self, msg, uid):
 		try:
-			school = self._LMSschoolList[int(msg)]
+			msg = msg.split()
+			school = self._LMSschoolList[int(msg[0])]
 		except:
 			self._send_error(4, uid)
 			return
@@ -598,47 +645,5 @@ Currently available channels are:
 		if msg == "":
 			self._send("Sarcasm !!", uid)
 
-# Daemon stuff.
-
-class MyDaemon(daemon):
-	def run(self):
-		tg = Telegram(
-		    telegram=TELEGRAM_DIR,
-		    pubkey_file=TELEGRAM_CERT)
-		global sender
-		receiver = tg.receiver
-		sender = tg.sender
-		receiver.start()
-		receiver.message(main_loop())
-		receiver.stop()
-		tg.stopCLI()
-
-@coroutine 
-def main_loop():
-	while True:
-		msg = (yield) 
-		if (msg.event == "message" and msg.receiver.cmd == SELF):
-			SvcBot(msg.text, msg.sender.cmd)
-		else: 
-			dprint("Not a message:", msg.event)
-
-if (__name__ == "__main__"):
-	daemon = MyDaemon('/tmp/daemon-example.pid')
-	if (len(sys.argv) == 2):
-		if 'start' == sys.argv[1]:
-			daemon.start()
-		elif 'stop' == sys.argv[1]:
-			daemon.stop()
-		elif 'restart' == sys.argv[1]:
-			daemon.restart()
-		elif 'run' == sys.argv[1]:
-			daemon.run()
-		else:
-			print ("Unknown command")
-			sys.exit(2)
-		sys.exit(0)
-	else:
-		print ("usage: %s start|stop|restart|run" % sys.argv[0])
-		sys.exit(2)
 
 			
