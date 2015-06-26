@@ -3,8 +3,8 @@ import config
 import main
 
 bot = main.SvcBot({'message':{'text':"!","from":{"id":0}}})
-Lsub = bot._get_LMSdaily_subscribers()
-Asub = bot._get_attendance_subscribers()
+Lsub = bot._get_subscribers("lmsdaily")
+Asub = bot._get_subscribers("attendance")
 
 for uid in Lsub:
 	bot.LMSdaily("", uid)

@@ -81,7 +81,7 @@ class SvcBot:
 		"You don't play-play ah." #9 for calling on private methods
 	]
 
-	_services = ['LMSdaily', 'attendance']
+	_services = ['lmsdaily', 'attendance']
 
 	# 
 	# Init & Helpers
@@ -105,7 +105,7 @@ class SvcBot:
 
 		if (msg[:7] == "/cancel"):
 			self._clear_status(uid)
-			self._send("Action has been cancelled. What else can I do for you?", uid)
+			self._send("Action has been cancelled. What else can I do for you?", uid, reply_markup={'hide_keyboard': True})
 			return
 		if (not self._get_status(uid) == None):
 			fn = getattr(self, self._get_status(uid))
@@ -164,7 +164,7 @@ class SvcBot:
 		self._db.commit()
 		pass
 
-	def _send(self, msg, uid, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
+	def _send(self, msg, uid, disable_web_page_preview=None, reply_to_message_id=None, reply_markup={'hide_keyboard': True}):
 		tid = self._get_tid(uid)
 		msg = msg.splitlines()
 		payload = {'chat_id': tid, 'text': msg}
@@ -272,21 +272,17 @@ class SvcBot:
 	def _shortern_url(self, url):
 		return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
 
-	def _get_LMSdaily_subscribers(self):
-		result = self._c.execute('SELECT uid FROM config WHERE "key" == "LMSdaily" AND "value" = "1"').fetchall()
-		return [a[0] for a in result]
-
-	def _get_attendance_subscribers(self):
-		result = self._c.execute('SELECT uid FROM config WHERE "key" == "attendance" AND "value" = "1"').fetchall()
+	def _get_subscribers(self, channel_name):
+		result = self._c.execute('SELECT uid FROM config WHERE "key" == "?" AND "value" = "1"', (channel_name, )).fetchall()
 		return [a[0] for a in result]
 
 	def _HTTP_req(self, method, payload):
 		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
 		import urllib
-		#print('Request')
-		#pprint(req.request.body)
-		#print('Response')
-		#pprint(req.text)
+		print('Request')
+		pprint(req.request.body)
+		print('Response')
+		pprint(req.text)
 		return req.json
 	# 
 	# Commands
@@ -301,12 +297,12 @@ You can use this bot by sending the following commands.
 
 /help - Show this help message. 
 /h - Show a concise help message.
-/loginLMS - Log into LMS.
-/logoutLMS - Log out from LMS.
-/loginAJINC - Log into AJINC.
-/logoutAJINC - Log out from AJINC.
-/LMSdaily - Check LMS updates.
-/LMSdaily 10 - Check LMS updates in the recent 10 days. (Number of days must be between 1 and 30 inclusive.)
+/loginlms - Log into LMS.
+/logoutlms - Log out from LMS.
+/loginajinc - Log into AJINC.
+/logoutajinc - Log out from AJINC.
+/lmsdaily - Check LMS updates.
+/lmsdaily 10 - Check LMS updates in the recent 10 days. (Number of days must be between 1 and 30 inclusive.)
 /attendance - Check attendance for today.
 /attendance 8 31 - Check attendance on 8/31 (31st of August).
 /cancel - Cancel the current action.
@@ -327,18 +323,25 @@ For enquires and feedback, please contact @blueset .
 		help_msg = "1A23 Service Bot\n\nSend the following messages to control this bot.\n\n/announcements - Check announcements"
 		lmsL = self._is_AJINC_logged_in(uid)
 		ajincL = self._is_AJINC_logged_in(uid)
+		keyboard = [["/announcements","/help"],[]]
 		if lmsL:
-			help_msg += "/LMSdaily - Check LMS updates.\n"
+			help_msg += "/lmsdaily - Check LMS updates.\n"
+			keyboard[1].append("/lmsdaily")
 		else: 
-			help_msg += "/loginLMS - Login LMS account. \n"
+			help_msg += "/loginlms - Login LMS account. \n"
+			keyboard[1].append("/loginlms")
 		if ajincL:
 			help_msg += "/attendance - Check your attendance for today.\n" 
+			keyboard[1].append("/attendance")
 		else:
-			help_msg += "/loginAJINC - Login AJINC account.\n"
+			help_msg += "/loginajinc - Login AJINC account.\n"
+			keyboard[1].append("/loginajinc")
 		if lmsL or ajincL:
 			help_msg += "/sub - Subscribe to a channel.\n"
+			keyboard[1].append("/sub")
 		help_msg += "\nFor a more detailed help message, reply /help ."
-		self._send(help_msg, uid)
+		reply_markup = {'one_time_keyboard': True, "keyboard" = keyboard}
+		self._send(help_msg, uid, reply_markup=reply_markup)
 		#self.help(msg, uid)
 
 	def about (self, msg, uid):
@@ -351,9 +354,12 @@ For enquires and feedback, please contact @blueset .
 
 		self._send(about_msg % VERSION, uid)
 
-	def loginLMS(self, msg, uid):
+	def start(self, msg, uid):
+		self.h(msg, uid)
+
+	def loginlms(self, msg, uid):
 		if self._is_LMS_logged_in(uid):
-			hint_msg = "You are already logged in, to log out, reply /logoutLMS ."
+			hint_msg = "You are already logged in, to log out, reply /logoutlms ."
 			self._send(hint_msg, uid)
 			return
 
@@ -361,16 +367,16 @@ For enquires and feedback, please contact @blueset .
 		hint_msg = "Please tell me your LMS Username, or reply /cancel to quit."
 		self._send(hint_msg, uid)
 
-	def logoutLMS(self, msg, uid):
+	def logoutlms(self, msg, uid):
 		if self._is_LMS_logged_in(uid):
 			self._delete_LMS_account(uid)
 			self._send("You've been successfully logged out from LMS.", uid)
 		else:
 			self._send_error(5, uid)
 
-	def LMSdaily(self, msg, uid):
+	def lmsdaily(self, msg, uid):
 		if not self._is_LMS_logged_in(uid):
-			self._send_error(7, uid, error_msg="Please login to LMS with /loginLMS .")
+			self._send_error(7, uid, error_msg="Please login to LMS with /loginlms .")
 			return
 		import datetime
 		delta = datetime.timedelta(-1)
@@ -406,9 +412,9 @@ For enquires and feedback, please contact @blueset .
 
 		self._send(msg, uid)
 
-	def loginAJINC(self, msg, uid):
+	def loginajinc(self, msg, uid):
 		if self._is_AJINC_logged_in(uid):
-			hint_msg = "You are already logged in, to log out, reply /logoutAJINC ."
+			hint_msg = "You are already logged in, to log out, reply /logoutajinc ."
 			self._send(hint_msg, uid)
 			return
 
@@ -416,7 +422,7 @@ For enquires and feedback, please contact @blueset .
 		hint_msg = "Please tell me your AJINC Username, or reply /cancel to quit."
 		self._send(hint_msg, uid)
 
-	def logoutAJINC(self, msg, uid):
+	def logoutajinc(self, msg, uid):
 		if self._is_AJINC_logged_in(uid):
 			self._delete_AJINC_account(uid)
 			self._send("You are successfully logged out of AJINC.", uid)
@@ -499,7 +505,9 @@ For enquires and feedback, please contact @blueset .
 					an += "\n==============\nAttachments:\n"
 				for att in ajincA[mid]['attachments']:
 					an += "[ %s ] Link: %s \n" % (att['name'], self._shortern_url(att['link']))
-				self._send(an, uid)
+
+				reply_markup = {'hide_keyboard': True}
+				self._send(an, uid, reply_markup=reply_markup)
 				return
 			elif msg[0] == "LMS":
 				lms = self._is_LMS_logged_in(uid)
@@ -522,7 +530,8 @@ For enquires and feedback, please contact @blueset .
 					an += "\n==============\nAttachments:\n"
 				for att in lmsA[mid].attachments:
 					an += "[ %s ] Link: %s \n" % (att.file_name, self._shortern_url(att.download_link))
-				self._send(an, uid)
+				reply_markup = {'hide_keyboard': True}
+				self._send(an, uid, reply_markup=reply_markup)
 				return
 			else:
 				self._send_error(6, uid, "Source must be either LMS or AJINC.")
@@ -554,7 +563,8 @@ Currently available channels are:
 1)"""
 		self._c.execute(query, (uid, msg, uid, msg))
 		self._db.commit()
-		self._send("You are now subscribed to %s." % msg, uid)
+		reply_markup = {'hide_keyboard': True}
+		self._send("You are now subscribed to %s." % msg, uid, reply_markup=reply_markup)
 
 
 	def unsub(self, msg, uid):
@@ -571,7 +581,8 @@ Currently available channels are:
 0)"""
 		self._c.execute(query, (uid, msg, uid, msg))
 		self._db.commit()
-		self._send("You are now unsubscribe from %s." % msg, uid)
+		reply_markup = {'hide_keyboard': True}
+		self._send("You are now unsubscribe from %s." % msg, uid, reply_markup=reply_markup)
 
 	#
 	# Status commands
@@ -615,7 +626,8 @@ Currently available channels are:
 			return
 		hint_msg = "You have successfully logged in."
 		self._add_LMS_account(username, password, school, l.pid, uid)
-		self._send(hint_msg, uid)
+		reply_markup = {'hide_keyboard': True}
+		self._send(hint_msg, uid, reply_markup=reply_markup)
 		self._clear_status()
 
 	def _loginAJINCun(self, msg, uid):
