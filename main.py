@@ -152,6 +152,7 @@ class SvcBot:
 		msg = "Error %s: %s (%s)" % (error_id, self._error_list[error_id], error_msg)
 		if DEVELOPEMENT_MODE: 
 			msg += "\n\nDebug info:\n" + debug_info;
+		msg += "\n\nTo report any issue, please contact @blueset ."
 		reply_markup = {'hide_keyboard': True}
 		self._send(msg, uid, reply_markup=reply_markup)
 
@@ -291,7 +292,7 @@ class SvcBot:
 	def help (self, msg, uid):
 		help_msg = r"""1A23 Service Bot
 
-@SvcBot1a23 is currently in alpha test stage. You are welcomed to provide any suggestions. 
+@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions. 
 
 You can use this bot by sending the following commands.
 
@@ -311,9 +312,6 @@ You can use this bot by sending the following commands.
 /announcements (LMS|AJINC) number - Show detail of one announcement. e.g.: "/announcements LMS 3"
 /sub <channel_name> - Subscribe to a channel. 
 /unsub <channel_name> - Unsubscribe from a channel.
-
-=== Not Available for now ===
-/searchLMS keyword - Search resources in LMS.
 
 For enquires and feedback, please contact @blueset .
 """
@@ -347,12 +345,12 @@ For enquires and feedback, please contact @blueset .
 	def about (self, msg, uid):
 		about_msg = r"""1A23 Service Bot (Version %s) brought to you by 1A23.com
 
-@SvcBot1A23 is currently in alpha test stage. You are welcomed to provide any suggestions. 
+@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions. 
 
 For enquires and feedback, please contact @blueset .
 """
 
-		self._send(about_msg % VERSION, uid)
+		self._send(about_msg % VERSION, uid, disable_web_page_preview=True)
 
 	def start(self, msg, uid):
 		self.h(msg, uid)
@@ -410,7 +408,7 @@ For enquires and feedback, please contact @blueset .
 					"\n - - From: " + res.course_name + "/" + res.section_name + 
 					"\n - - Download: " + res.url + "\n\n")
 
-		self._send(msg, uid)
+		self._send(msg, uid, disable_web_page_preview=True)
 
 	def loginajinc(self, msg, uid):
 		if self._is_AJINC_logged_in(uid):
@@ -543,7 +541,7 @@ For enquires and feedback, please contact @blueset .
 	def sub(self, msg, uid):
 		if msg == '':
 			msg = """Subscribe to a service.
-After subscribing to it, you can receive daily messages of that channel.
+Receive daily message from channels.
 
 Currently available channels are:
 """
@@ -569,7 +567,7 @@ Currently available channels are:
 
 	def unsub(self, msg, uid):
 		if not msg in self._services:
-			error_msg = "%s is not an available service. \nYou can unsubscribe from the following:\n%s" % (msg, "\n".join(self._services))
+			error_msg = "You can unsubscribe from the following:\n%s" % (msg, "\n".join(self._services))
 			keylist = [["/unsub "+svc] for svc in self._services]
 			reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
 			self._send(msg, uid, reply_markup=reply_markup)
