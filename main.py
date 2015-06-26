@@ -340,7 +340,7 @@ For enquires and feedback, please contact @blueset .
 			help_msg += "/sub - Subscribe to a channel.\n"
 			keyboard[1].append("/sub")
 		help_msg += "\nFor a more detailed help message, reply /help ."
-		reply_markup = {'one_time_keyboard': True, "keyboard" = keyboard}
+		reply_markup = {'one_time_keyboard': True, "keyboard": keyboard}
 		self._send(help_msg, uid, reply_markup=reply_markup)
 		#self.help(msg, uid)
 
