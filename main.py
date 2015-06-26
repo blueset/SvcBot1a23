@@ -320,7 +320,7 @@ For enquires and feedback, please contact @blueset .
 		self._send(help_msg, uid)
 
 	def h (self, msg, uid):
-		help_msg = "1A23 Service Bot\n\nSend the following messages to control this bot.\n\n/announcements - Check announcements"
+		help_msg = "1A23 Service Bot\n\nSend the following messages to control this bot.\n\n/announcements - Check announcements\n"
 		lmsL = self._is_AJINC_logged_in(uid)
 		ajincL = self._is_AJINC_logged_in(uid)
 		keyboard = [["/announcements","/help"],[]]
