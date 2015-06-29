@@ -274,7 +274,7 @@ class SvcBot:
 		return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
 
 	def _get_subscribers(self, channel_name):
-		result = self._c.execute('SELECT uid FROM config WHERE "key" == "?" AND "value" = "1"', (channel_name, )).fetchall()
+		result = self._c.execute('SELECT uid FROM config WHERE "key" == ? AND "value" = "1"', (channel_name, )).fetchall()
 		return [a[0] for a in result]
 
 	def _HTTP_req(self, method, payload):
