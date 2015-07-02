@@ -271,7 +271,10 @@ class SvcBot:
 		"""
 		return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid, )).fetchall()[0]
 	def _shortern_url(self, url):
-		return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
+		#return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
+		import urllib
+		paylaod = {'url':url, 'appname': '1A23SvcBot', 'format': 'json'}
+		return requests.post("http://ttb.li/api/shorten?" + urllib.parse.urlencode(f)).json()['shorturl']
 
 	def _get_subscribers(self, channel_name):
 		result = self._c.execute('SELECT uid FROM config WHERE "key" == ? AND "value" = "1"', (channel_name, )).fetchall()
