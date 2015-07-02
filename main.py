@@ -273,8 +273,8 @@ class SvcBot:
 	def _shortern_url(self, url):
 		#return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
 		import urllib
-		payload = {'url':url, 'appname': '1A23SvcBot', 'format': 'json'}
-		return requests.post("http://ttb.li/api/shorten?" + urllib.parse.urlencode(payload)).json()['shorturl']
+		payload = {'action': 'shorturl', 'url': url, 'format': 'json'}
+		return requests.post("http://tny.im/yourls-api.php?" + urllib.parse.urlencode(payload)).json()['shorturl']
 
 	def _get_subscribers(self, channel_name):
 		result = self._c.execute('SELECT uid FROM config WHERE "key" == ? AND "value" = "1"', (channel_name, )).fetchall()
