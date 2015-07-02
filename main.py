@@ -567,7 +567,7 @@ Currently available channels are:
 
 	def unsub(self, msg, uid):
 		if not msg in self._services:
-			error_msg = "You can unsubscribe from the following:\n%s" % (msg, "\n".join(self._services))
+			error_msg = "You can unsubscribe from the following:\n%s" % ("\n".join(self._services))
 			keylist = [["/unsub "+svc] for svc in self._services]
 			reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
 			self._send(msg, uid, reply_markup=reply_markup)
