@@ -112,7 +112,7 @@ class SvcBot:
 			fn(msg, uid)
 			return
 
-		if (msg[:1] == '/'):
+		if (msg[:1] == '/' and len(msg) > 1):
 			para = msg[1:].split()
 			if para[0][:1] == '_' and not DEVELOPEMENT_MODE:
 				self._send_error(9, uid)
