@@ -1,6 +1,7 @@
-# coding=utf-8
+# encoding=utf-8
 
 """1A23 Service Bot Telegram Bot API version"""
+__author__ = "Eana Hufwe <iLove@1a23.com>"
 
 from pytg.utils import coroutine
 from pprint import pprint
@@ -12,7 +13,7 @@ import sys
 import json
 import requests
 import logging
-import traceback 
+import traceback
 import config
 
 # Constants
@@ -23,37 +24,37 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 0.1.0 build 20150625"
+VERSION = "ver 1.0.5 build 20150704"
 BOT_KEY = config.BOT_KEY
 
 # Redirect STDOUT and STDERR to logger
 class StreamToLogger(object):
-   """
-   Fake file-like stream object that redirects writes to a logger instance.
-   """
-   def __init__(self, logger, log_level=logging.INFO):
-      self.logger = logger
-      self.log_level = log_level
-      self.linebuf = ''
- 
-   def write(self, buf):
-      for line in buf.rstrip().splitlines():
-         self.logger.log(self.log_level, line.rstrip())
+	"""
+	Fake file-like stream object that redirects writes to a logger instance.
+	"""
+	def __init__(self, logger, log_level=logging.INFO):
+		self.logger = logger
+		self.log_level = log_level
+		self.linebuf = ''
 
-   def flush(self):
-    	pass
- 
+	def write(self, buf):
+		for line in buf.rstrip().splitlines():
+			self.logger.log(self.log_level, line.rstrip())
+
+	def flush(self):
+		pass
+
 logging.basicConfig(
    level=logging.DEBUG,
    format='[ %(asctime)s : %(levelname)s : %(name)s ] %(message)s',
    filename=ROOT_PATH+"svcbot.log",
    filemode='a'
 )
- 
+
 #stdout_logger = logging.getLogger('STDOUT')
 #sl = StreamToLogger(stdout_logger, logging.INFO)
 #sys.stdout = sl
- 
+
 #stderr_logger = logging.getLogger('STDERR')
 #sl = StreamToLogger(stderr_logger, logging.ERROR)
 #sys.stderr = sl
@@ -71,21 +72,21 @@ class SvcBot:
 	_error_list = [
 		"Command not found. Please send /h to get the list of commands.", #0
 		"Not a command. Please send /h to get the list of commands.", #1
-		"Error occured while logging in LMS.", #2
+		"Error occurred while logging in LMS.", #2
 		"User not found.", #3
 		"Invalid School ID.", #4
 		"You have not logged in yet, or you have already logged out.", #5
 		"Invalid parameter.", #6
 		"Login required.", #7
-		"Error occurend while logging in AJINC.", #8
+		"Error occurred while logging in AJINC.", #8
 		"You don't play-play ah." #9 for calling on private methods
 	]
 
 	_services = ['lmsdaily', 'attendance']
 
-	# 
+	#
 	# Init & Helpers
-	# 
+	#
 
 	def __init__(self, json_obj):
 
@@ -124,7 +125,7 @@ class SvcBot:
 				self._send_error(1, uid, debug_info = debug_msg)
 				return
 			fn(" ".join(para[1:]), uid)
-		else: 
+		else:
 			if DEVELOPEMENT_MODE:
 				pass
 			else:
@@ -150,7 +151,7 @@ class SvcBot:
 		for line in traceback.format_stack():
 			dprint (line.strip())
 		msg = "Error %s: %s (%s)" % (error_id, self._error_list[error_id], error_msg)
-		if DEVELOPEMENT_MODE: 
+		if DEVELOPEMENT_MODE:
 			msg += "\n\nDebug info:\n" + debug_info;
 		msg += "\n\nTo report any issue, please contact @blueset ."
 		reply_markup = {'hide_keyboard': True}
@@ -169,7 +170,7 @@ class SvcBot:
 		tid = self._get_tid(uid)
 		msg = msg.splitlines()
 		payload = {'chat_id': tid, 'text': msg}
-		if not disable_web_page_preview == None: 
+		if not disable_web_page_preview == None:
 			payload['disable_web_page_preview'] = disable_web_page_preview
 		if not reply_to_message_id == None:
 			payload['reply_to_message_id'] = reply_to_message_id
@@ -196,7 +197,6 @@ class SvcBot:
 		self._HTTP_req('sendMessage', payload)
 
 	def _set_status(self, status, uid):
-		print("yay")
 		dprint("Setting status for user", uid, "to", status)
 		self._c.execute("UPDATE users SET status = ? WHERE id = ?", (status, uid, ))
 		self._db.commit()
@@ -236,15 +236,12 @@ class SvcBot:
 		result = self._c.execute("SELECT * FROM LMS WHERE uid = ?", (uid, )).fetchall()
 		if (len(result) > 0):
 			return True
-		else: 
+		else:
 			return False
 
 	def _delete_LMS_account(self, uid):
-		print('before', uid)
 		self._c.execute("DELETE FROM LMS WHERE uid = ?", (uid, ))
-		print ('between')
 		self._db.commit()
-		print ('end')		
 
 	def _get_LMS_puid_school(self, uid):
 		return self._c.execute('SELECT puid, school FROM LMS WHERE uid = ?', (uid, )).fetchall()[0]
@@ -253,7 +250,7 @@ class SvcBot:
 		result = self._c.execute("SELECT * FROM AJINC WHERE uid = ?", (uid, )).fetchall()
 		if (len(result) > 0):
 			return True
-		else: 
+		else:
 			return False
 
 	def _add_AJINC_account(self, username, password, uid):
@@ -265,11 +262,8 @@ class SvcBot:
 		self._db.commit()
 
 	def _get_AJINC_un_pw(self, uid):
-		"""
-
-		:rtype :
-		"""
 		return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid, )).fetchall()[0]
+
 	def _shortern_url(self, url):
 		#return requests.post("https://www.googleapis.com/urlshortener/v1/url?key="+GOO_GL_API_KEY, data=json.dumps({"longUrl":url}), headers={"Content-type":"application/json"}).json()['id']
 		import urllib
@@ -283,23 +277,20 @@ class SvcBot:
 	def _HTTP_req(self, method, payload):
 		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
 		import urllib
-		print('Request')
-		pprint(req.request.body)
-		print('Response')
-		pprint(req.text)
 		return req.json
-	# 
+
+	#
 	# Commands
-	# 
+	#
 
 	def help (self, msg, uid):
 		help_msg = r"""1A23 Service Bot
 
-@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions. 
+@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions.
 
 You can use this bot by sending the following commands.
 
-/help - Show this help message. 
+/help - Show this help message.
 /h - Show a concise help message.
 /loginlms - Log into LMS.
 /logoutlms - Log out from LMS.
@@ -313,7 +304,7 @@ You can use this bot by sending the following commands.
 /about - About this bot.
 /announcements - Check announcements from both LMS and AJINC.
 /announcements (LMS|AJINC) number - Show detail of one announcement. e.g.: "/announcements LMS 3"
-/sub <channel_name> - Subscribe to a channel. 
+/sub <channel_name> - Subscribe to a channel.
 /unsub <channel_name> - Unsubscribe from a channel.
 
 For enquires and feedback, please contact @blueset .
@@ -328,11 +319,11 @@ For enquires and feedback, please contact @blueset .
 		if lmsL:
 			help_msg += "/lmsdaily - Check LMS updates.\n"
 			keyboard[1].append("/lmsdaily")
-		else: 
+		else:
 			help_msg += "/loginlms - Login LMS account. \n"
 			keyboard[1].append("/loginlms")
 		if ajincL:
-			help_msg += "/attendance - Check your attendance for today.\n" 
+			help_msg += "/attendance - Check your attendance for today.\n"
 			keyboard[1].append("/attendance")
 		else:
 			help_msg += "/loginajinc - Login AJINC account.\n"
@@ -348,7 +339,7 @@ For enquires and feedback, please contact @blueset .
 	def about (self, msg, uid):
 		about_msg = r"""1A23 Service Bot (Version %s) brought to you by 1A23.com
 
-@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions. 
+@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions.
 
 For enquires and feedback, please contact @blueset .
 """
@@ -382,12 +373,12 @@ For enquires and feedback, please contact @blueset .
 		import datetime
 		delta = datetime.timedelta(-1)
 		if (not msg == ""):
-			try: 
+			try:
 				days = int(msg)
 			except:
 				self._send_error(6, uid, error_msg="%s is not number of days." % msg)
 				return
-			if days < 1 or days > 30: 
+			if days < 1 or days > 30:
 				self._send_error(6, uid, error_msg="Number of days must be between 1 and 30 inclusive.")
 				return
 			delta = datetime.timedelta(0-days)
@@ -395,11 +386,11 @@ For enquires and feedback, please contact @blueset .
 		hint_msg = "Connecting to LMS server. It may take a few seconds."
 		self._send(hint_msg, uid)
 		(puid, school) = self._get_LMS_puid_school(uid)
-		
+
 		l = LMSAPI.LMSAPI()
 		dprint ("fetching from", puid, school)
 		l.login_pid (puid, school)
-		f = l.get_course_info()	
+		f = l.get_course_info()
 		c = l.parse_course_info(f)
 		r = l.find_resources_by_date(c, datetime.datetime.now()+delta, datetime.datetime.now())
 		msg = "LMS Daily Update\n from " + str(datetime.datetime.now()+delta) + " \nto " + str(datetime.datetime.now()) + "\n\n"
@@ -407,8 +398,8 @@ For enquires and feedback, please contact @blueset .
 			msg += "There is no update."
 		for res in r:
 			res.url = self._shortern_url(res.url)
-			msg += ("["+str(res.create_time)+"] " + str(res.title) + 
-					"\n - - From: " + res.course_name + "/" + res.section_name + 
+			msg += ("["+str(res.create_time)+"] " + str(res.title) +
+					"\n - - From: " + res.course_name + "/" + res.section_name +
 					"\n - - Download: " + res.url + "\n\n")
 
 		self._send(msg, uid, disable_web_page_preview=True)
@@ -459,7 +450,7 @@ For enquires and feedback, please contact @blueset .
 		if msg == "":
 			lms = self._is_LMS_logged_in(uid)
 			if lms:
-				(puid, school) = self._get_LMS_puid_school(uid)		
+				(puid, school) = self._get_LMS_puid_school(uid)
 				l = LMSAPI.LMSAPI()
 				l.login_pid (puid, school)
 				lmsxml = l.get_announcements()
@@ -471,7 +462,7 @@ For enquires and feedback, please contact @blueset .
 			an = "Here are the list of announcements. \n\n"
 			if not lms:
 				an += "You havent logged into LMS. \n"
-			else: 
+			else:
 				for key, item in enumerate(lmsA):
 					an += "[ LMS %s ] %s\n" % (key, item.title)
 					keylist.append(["/ann LMS %s %s" % (key, item.title)])
@@ -514,7 +505,7 @@ For enquires and feedback, please contact @blueset .
 				lms = self._is_LMS_logged_in(uid)
 				if not lms:
 					self._send_error(7, uid)
-				(puid, school) = self._get_LMS_puid_school(uid)		
+				(puid, school) = self._get_LMS_puid_school(uid)
 				l = LMSAPI.LMSAPI()
 				l.login_pid (puid, school)
 				lmsA = l.parse_announcements(l.get_announcements())
@@ -558,7 +549,7 @@ Currently available channels are:
 			self._send_error(6, uid, error_msg = error_msg)
 			return
 		query = """INSERT OR REPLACE INTO config (id, uid, `key`, value) VALUES (
-(SELECT id FROM config WHERE uid = ? AND `key` = ?), 
+(SELECT id FROM config WHERE uid = ? AND `key` = ?),
 ?,
 ?,
 1)"""
@@ -587,8 +578,8 @@ Currently available channels are:
 
 	#
 	# Status commands
-	# 
-	
+	#
+
 	def _loginLMSun(self, msg, uid):
 		dprint("received username:", msg, "for user", uid)
 		self._set_status("_loginLMSpw", uid)
@@ -652,11 +643,8 @@ Currently available channels are:
 
 	#
 	# Easter eggs & Hidden features
-	# 
-	
+	#
+
 	def s(self, msg, uid):
 		if msg == "":
 			self._send("Sarcasm !!", uid)
-
-
-			

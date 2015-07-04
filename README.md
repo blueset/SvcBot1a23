@@ -1,4 +1,4 @@
-# [SvcBot1A23](http://telegram.me/svcbot1a23)
+# [1A23 Service Bot](http://telegram.me/svc1a23bot)
 Created by [1a23.com](http://telegram.me/blueset)
 
 ## Issue?
