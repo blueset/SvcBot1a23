@@ -7,7 +7,7 @@ Lsub = bot._get_subscribers("lmsdaily")
 Asub = bot._get_subscribers("attendance")
 
 for uid in Lsub:
-	bot.LMSdaily("", uid)
+	bot.lmsdaily("", uid)
 
 for uid in Asub:
 	bot.attendance("", uid)
