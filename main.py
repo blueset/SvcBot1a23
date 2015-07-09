@@ -24,7 +24,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.0.5 build 20150704"
+VERSION = "ver 1.0.5 build 20150709"
 BOT_KEY = config.BOT_KEY
 
 # Redirect STDOUT and STDERR to logger
@@ -620,7 +620,7 @@ Currently available channels are:
 		self._add_LMS_account(username, password, school, l.pid, uid)
 		reply_markup = {'hide_keyboard': True}
 		self._send(hint_msg, uid, reply_markup=reply_markup)
-		self._clear_status()
+		self._clear_status(uid)
 
 	def _loginAJINCun(self, msg, uid):
 		self._set_status("_loginAJINCpw", uid)
