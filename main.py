@@ -82,7 +82,7 @@ class SvcBot:
 		"You don't play-play ah." #9 for calling on private methods
 	]
 
-	_services = ['lmsdaily', 'attendance']
+	_services = ['lmsdaily', 'attendance', 'jc2rev']
 
 	#
 	# Init & Helpers
@@ -648,3 +648,77 @@ Currently available channels are:
 	def s(self, msg, uid):
 		if msg == "":
 			self._send("Sarcasm !!", uid)
+
+	#
+	# Special Events
+	#
+	
+	def jc2rev(self, msg, uid):
+		kit = [r'''0. JC2 Chem/Physics/Math Revision Calendar 
+Question list are included.
+Available for Chem Band 2 (Audi Group), Physics Group 2 (Audi Group), Math Band B (Audi Group).
+Tutorialsare labeled as:
+Chem: Wed, Thu
+Physics: Mon, Thu
+Math: Mon, Tue
+
+Web version:
+https://goo.gl/9Bx5G4
+
+Import it to your own calendar:
+Chem: https://goo.gl/GdFc9A
+Math: https://goo.gl/DRkky9
+Physics: https://goo.gl/USvVtp''',
+r'''1. Online Resources Package
+  a. H2 Chemistry
+    P1 Feedback Qn: http://goo.gl/R3YKGY
+    Soln.: http://goo.gl/7Cs2c4
+    2015 DRL Qn list for Organic 1:
+       Band A: http://goo.gl/mx6sd2
+       Band B: http://goo.gl/Vdth23
+       Band C: http://goo.gl/xnwNMT
+
+  b. H2 Physics
+    VA Schedule: http://goo.gl/TWaokr (or refer to the calendar above)
+    VA Qn List: http://goo.gl/0w3hPu
+    VA Qn Attachment: http://goo.gl/0xR5KD
+    Set A MCQ: http://goo.gl/zfYCsv
+    Set B MCQ: http://goo.gl/XdXWZn
+    Group C:
+       Set 1: http://goo.gl/Frxrf9
+       Set 2: http://goo.gl/Fsk4B1
+       Set 3: http://goo.gl/pPwaHL
+       Set 4: http://goo.gl/opgSd8
+       Set 5: http://goo.gl/xJUqGu
+       Set 6: http://goo.gl/23dkSh
+       Set 7: http://goo.gl/XRq2ll
+       Set 8: http://goo.gl/d1kMFO''']
+		if msg = '':
+			replymsg = "JC2 Revision Package is now available. Reply to see more details. \nTo get updates on the package, please reply \n/sub jc2rev"
+			keylist = [['/jc2rev 0 JC2 Chem/Physics/Math Revision Calendar '],['/jc2rev 1 Online Resources Package'], ['/sub jc2rev'], ['/cancel']]
+			reply_markup = {"keyboard": keylist, "one_time_keyboard": True}
+			self._send(replymsg, uid, reply_markup=reply_markup)
+			return
+		msg = msg.split()
+
+		if msg[0].isdecimal() and int(msg[0]) < len(kit):
+			reply_markup = {'hide_keyboard': True}
+			self._send(kit[int(msg[0])], uid, reply_markup=reply_markup)
+			return
+		else:
+			self._send_error(6, uid)
+			return
+
+	def _broadcast(self, msg):
+		lms = self._c.execute('SELECT uid FROM LMS').fetchall()
+		ajinc = self._c.execute('SELECT uid FROM AJINC').fetchall()
+		suber = self._c.execute('SELECT uid FROM config WHERE value = 1').fetchall()
+		lms = [i[0] for i in lms]
+		ajinc = [i[0] for i in ajinc]
+		suber = [i[0] for i in suber]
+		user_list = list(set(lms)|set(ajinc)|set(suber))
+
+		for uid in user_list:
+			self._send(msg, uid)
+
+		return
