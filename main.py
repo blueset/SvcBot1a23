@@ -693,7 +693,7 @@ r'''1. Online Resources Package
        Set 6: http://goo.gl/23dkSh
        Set 7: http://goo.gl/XRq2ll
        Set 8: http://goo.gl/d1kMFO''']
-		if msg = '':
+		if msg == '':
 			replymsg = "JC2 Revision Package is now available. Reply to see more details. \nTo get updates on the package, please reply \n/sub jc2rev"
 			keylist = [['/jc2rev 0 JC2 Chem/Physics/Math Revision Calendar '],['/jc2rev 1 Online Resources Package'], ['/sub jc2rev'], ['/cancel']]
 			reply_markup = {"keyboard": keylist, "one_time_keyboard": True}
