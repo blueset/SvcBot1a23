@@ -709,7 +709,7 @@ r'''1. Online Resources Package
 			self._send_error(6, uid)
 			return
 
-	def _broadcast(self, msg):
+	def _broadcast(self, msg, reply_markup={'hide_keyboard': True}):
 		lms = self._c.execute('SELECT uid FROM LMS').fetchall()
 		ajinc = self._c.execute('SELECT uid FROM AJINC').fetchall()
 		suber = self._c.execute('SELECT uid FROM config WHERE value = 1').fetchall()
@@ -719,6 +719,6 @@ r'''1. Online Resources Package
 		user_list = list(set(lms)|set(ajinc)|set(suber))
 
 		for uid in user_list:
-			self._send(msg, uid)
+			self._send(msg, uid, reply_markup=reply_markup)
 
 		return
