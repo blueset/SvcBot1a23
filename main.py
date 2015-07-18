@@ -7,6 +7,7 @@ from pytg.utils import coroutine
 from pprint import pprint
 from daemon import daemon
 from AJINC import AJINCAPI
+from AJINC import AJINCAPILoginError
 from LMSAPI import LMSAPI
 import sqlite3
 import sys
