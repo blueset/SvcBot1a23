@@ -804,6 +804,7 @@ Currently available channels are:
 			return
 	
 	def nextlesson(self, msg, uid):
+		import datetime
 		if not self._is_AJINC_logged_in(uid):
 			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
 			return
