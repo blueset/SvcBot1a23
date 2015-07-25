@@ -772,7 +772,7 @@ Currently available channels are:
 			self._send(tbl_str, uid)
 			return
 		if msg[0] == 'tomorrow':
-			tmr = datetime.date.today()+datetime.timedelta(day=1)
+			tmr = datetime.date.today()+datetime.timedelta(days=1)
 			if tmr.weekday() > 4:
 				self._send("Tomorrow is weekend. Hooray!", uid)
 				tbl = a.get_timetable()
