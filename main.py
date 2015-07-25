@@ -12,7 +12,7 @@ from LMSAPI import LMSAPI
 import sqlite3
 import sys
 import json
-import requests
+#import requests
 import logging
 import traceback
 import config
@@ -432,7 +432,6 @@ class SvcBot:
 
 	def _send_image(self, fname, uid, msg='', delete=False, disable_web_page_preview=None, reply_to_message_id=None, reply_markup={'hide_keyboard': True}):
 		tid = self._get_tid(uid)
-		msg = msg.splitlines()
 		payload = {'chat_id': tid, 'caption': msg, 'photo': open(fname, 'rb')}
 		if not disable_web_page_preview == None:
 			payload['disable_web_page_preview'] = disable_web_page_preview
@@ -442,7 +441,7 @@ class SvcBot:
 			payload['reply_markup'] = json.dumps(reply_markup, separators=(',',':'))
 
 		method = 'sendPhoto'
-		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
+		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), files={'photo': open(fname, 'rb')}, data=payload)
 		if delete:
 			import os
 			os.remove(fname)
