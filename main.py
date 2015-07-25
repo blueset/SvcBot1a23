@@ -326,7 +326,7 @@ class SvcBot:
 		PADDING_DAY = [20, 20]
 		PADDING_TIME = [10, 10]
 		PADDING_LESSON_BOX = [8,8,8,8]
-		BANNER_TEXT = "Timetable on %s for %s" % (time.strftime("%-d %b, %Y"), usnrename)
+		BANNER_TEXT = "Timetable on %s for %s" % (time.strftime("%-d %b, %Y"), username)
 		BANNER_SUB = "Created with 1A23 Service Bot @Svc1A23Bot http://svcbot.1a23.com"
 		WRAP_WIDTH = 12
 
@@ -772,9 +772,13 @@ Currently available channels are:
 			self._send(tbl_str, uid)
 			return
 		if msg[0] == 'tomorrow':
-			tmr = datetime.date.tmr()+datetime.timedelta(day=1)
+			tmr = datetime.date.today()+datetime.timedelta(day=1)
 			if tmr.weekday() > 4:
 				self._send("Tomorrow is weekend. Hooray!", uid)
+				tbl = a.get_timetable()
+				tbl_str = "📅 Timetable on Monday\n" 
+				tbl_str += self._parse_timetable_string(tbl[0])
+				tbl_str += "\nNo more lesson afterwards."
 				return
 			tbl = a.get_timetable()
 			tbl_str = "📅 Timetable Tomorrow\nDate: %s\n\n" % tmr.isoformat()
