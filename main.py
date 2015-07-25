@@ -12,7 +12,7 @@ from LMSAPI import LMSAPI
 import sqlite3
 import sys
 import json
-#import requests
+import requests
 import logging
 import traceback
 import config
@@ -376,7 +376,6 @@ class SvcBot:
 			span = 0
 			for l in d2:
 				span += l['span']
-			print (span)
 			max_spans = span if max_spans < span else max_spans
 
 		max_spans = max_spans + 1 if max_spans < 13 else max_spans
@@ -432,7 +431,7 @@ class SvcBot:
 
 	def _send_image(self, fname, uid, msg='', delete=False, disable_web_page_preview=None, reply_to_message_id=None, reply_markup={'hide_keyboard': True}):
 		tid = self._get_tid(uid)
-		payload = {'chat_id': tid, 'caption': msg, 'photo': open(fname, 'rb')}
+		payload = {'chat_id': tid, 'caption': msg}
 		if not disable_web_page_preview == None:
 			payload['disable_web_page_preview'] = disable_web_page_preview
 		if not reply_to_message_id == None:
