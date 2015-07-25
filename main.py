@@ -445,7 +445,7 @@ class SvcBot:
 		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
 		if delete:
 			import os
-			os.remove(path)
+			os.remove(fname)
 
 	#
 	# Commands
