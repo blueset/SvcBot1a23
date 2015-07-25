@@ -774,11 +774,11 @@ Currently available channels are:
 		if msg[0] == 'tomorrow':
 			tmr = datetime.date.today()+datetime.timedelta(days=1)
 			if tmr.weekday() > 4:
-				self._send("Tomorrow is weekend. Hooray!", uid)
 				tbl = a.get_timetable()
-				tbl_str = "📅 Timetable on Monday\n" 
+				tbl_str = "Tomorrow is weekend. Hooray!" + "\n📅 Timetable on Monday\n" 
 				tbl_str += self._parse_timetable_string(tbl[0])
 				tbl_str += "\nNo more lesson afterwards."
+				self._send(tbl_str, uid)
 				return
 			tbl = a.get_timetable()
 			tbl_str = "📅 Timetable Tomorrow\nDate: %s\n\n" % tmr.isoformat()
