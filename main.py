@@ -339,8 +339,8 @@ class SvcBot:
 		img = Image.new('RGB', (WIDTH, HEIGHT), color='white')
 		draw = ImageDraw.Draw(img)
 
-		b_reg = ImageFont.truetype("Roboto-Regular.ttf", int(BANNER_SIZE*0.8))
-		b_bold = ImageFont.truetype("Roboto-Bold.ttf", BANNER_SIZE)
+		b_reg = ImageFont.truetype(ROOT_PATH+"Roboto-Regular.ttf", int(BANNER_SIZE*0.8))
+		b_bold = ImageFont.truetype(ROOT_PATH+"Roboto-Bold.ttf", BANNER_SIZE)
 
 		draw.rectangle([0,0, WIDTH, 90], fill=(87, 165, 240))
 		draw.text ([BANNER_SPACING,BANNER_SPACING], BANNER_TEXT, fill='white', font=b_bold)
@@ -359,9 +359,9 @@ class SvcBot:
 			y_val = int(PADDING[0]+first_col_width+cell_width*(i+1))
 			draw.line([y_val, PADDING[2], y_val, HEIGHT-PADDING[3]], fill='black', width=2) 
 
-		r_reg = ImageFont.truetype("Roboto-Regular.ttf", FONT_SIZE)
-		r_venue = ImageFont.truetype("Roboto-Regular.ttf", int(FONT_SIZE*0.8))
-		r_bold = ImageFont.truetype("Roboto-Bold.ttf", FONT_SIZE)
+		r_reg = ImageFont.truetype(ROOT_PATH+"Roboto-Regular.ttf", FONT_SIZE)
+		r_venue = ImageFont.truetype(ROOT_PATH+"Roboto-Regular.ttf", int(FONT_SIZE*0.8))
+		r_bold = ImageFont.truetype(ROOT_PATH+"Roboto-Bold.ttf", FONT_SIZE)
 
 		draw.text([PADDING[0]+first_col_width+cell_width*0+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Mon",fill="black",font=r_reg)
 		draw.text([PADDING[0]+first_col_width+cell_width*1+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Tue",fill="black",font=r_reg)
