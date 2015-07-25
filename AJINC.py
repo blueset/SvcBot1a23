@@ -144,3 +144,7 @@ class AJINCAPI(object):
 					trday[-1]['type']=td.attrs['title']
 			tbl.append(trday.copy())
 		return tbl	
+
+	def reset_session(self):
+		self.__s.get("http://ajinc.wizlearn.com/ajinc/logout.aspx")
+		self.__s.cookies.clear()

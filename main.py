@@ -85,6 +85,7 @@ class SvcBot:
 
 	_services = ['lmsdaily', 'attendance', 'jc2rev']
 
+
 	#
 	# Init & Helpers
 	#
@@ -280,6 +281,171 @@ class SvcBot:
 		import urllib
 		return req.json
 
+	def _parse_timetable_string(self, tbl):
+		empty = "⚪️"
+		lesson = "🔵"
+		result = ""
+		import datetime
+		t = datetime.datetime(1,1,1,7,15)
+		period = datetime.timedelta(minutes=30)
+		if tbl[-1]['type'] == 'empty':
+			tbl = tbl[:-1]
+		for lsn in tbl:
+			lsn_type = empty if lsn['type'] == 'empty' else lesson
+			lsn_name = "" if lsn['type'] == 'empty' else ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in lsn['name'])))+" @ "+' / '.join(lsn['venue'])
+			for i in range(lsn['span']):
+				t += period
+				lsn_time = t.strftime("%H:%M")
+				result += "%s %s %s\n" % (lsn_type, lsn_time, lsn_name)
+		for i in range(2):
+			t += period
+			lsn_time = t.strftime("%H:%M")
+			result += "%s %s %s\n" % (empty, lsn_time, '')
+		return result
+
+	def _parse_lesson_name(self, lesson):
+		import re
+		lsn_lst = config.LESSONS
+		for key, val in lsn_lst.items():
+			result = re.search(r'[^A-Za-z]%s[^A-Za-z]?' % key, lesson)
+			if not result == None: 
+				return val
+		return [lesson, lesson]
+
+	def _draw_timetable(self, tbl, time, username):
+		import datetime
+		WIDTH = 1240
+		HEIGHT = 1753
+		BANNER_FACTOR = 20
+		FIRST_COLUMN_FACTOR = 8
+		FONT_SIZE = 35
+		LINE_SPACING = 0.2
+		BANNER_SIZE = 30
+		BANNER_SPACING = 10
+		PADDING = [20, 20, 100, 20] # L, R, T, B
+		PADDING_DAY = [20, 20]
+		PADDING_TIME = [10, 10]
+		PADDING_LESSON_BOX = [8,8,8,8]
+		BANNER_TEXT = "Timetable on %s for %s" % (time.strftime("%-d %b, %Y"), usnrename)
+		BANNER_SUB = "Created with 1A23 Service Bot @Svc1A23Bot http://svcbot.1a23.com"
+		WRAP_WIDTH = 12
+
+		first_col_width = int((WIDTH-PADDING[0]-PADDING[1])/FIRST_COLUMN_FACTOR)
+		banner_height = int((HEIGHT-PADDING[2]-PADDING[3])/BANNER_FACTOR)
+		cell_width = int((WIDTH-PADDING[1]-PADDING[0]-first_col_width)/5)
+		line_spacing = int(LINE_SPACING*FONT_SIZE)
+
+		from PIL import Image, ImageDraw, ImageFont
+		img = Image.new('RGB', (WIDTH, HEIGHT), color='white')
+		draw = ImageDraw.Draw(img)
+
+		b_reg = ImageFont.truetype("Roboto-Regular.ttf", int(BANNER_SIZE*0.8))
+		b_bold = ImageFont.truetype("Roboto-Bold.ttf", BANNER_SIZE)
+
+		draw.rectangle([0,0, WIDTH, 90], fill=(87, 165, 240))
+		draw.text ([BANNER_SPACING,BANNER_SPACING], BANNER_TEXT, fill='white', font=b_bold)
+		draw.text ([BANNER_SPACING, BANNER_SPACING*2+BANNER_SIZE], BANNER_SUB, fill='white', font=b_reg)
+
+		# L, R, T, B, Banner
+		draw.line([PADDING[0],PADDING[2],PADDING[0],HEIGHT-PADDING[3]], fill='black', width=5) 
+		draw.line([WIDTH-PADDING[1],PADDING[2],WIDTH-PADDING[1],HEIGHT-PADDING[3]], fill='black', width=5) 
+		draw.line([PADDING[0],PADDING[2],WIDTH-PADDING[1],PADDING[2]], fill='black', width=5) 
+		draw.line([PADDING[0],HEIGHT-PADDING[3],WIDTH-PADDING[1],HEIGHT-PADDING[3]], fill='black', width=5) 
+		draw.line([PADDING[0], int(PADDING[2]+banner_height), WIDTH-PADDING[1], int(PADDING[2]+banner_height)], fill='black', width=5) 
+
+		# First column and others
+		draw.line([int(PADDING[0]+first_col_width),PADDING[2],int(PADDING[0]+first_col_width),HEIGHT-PADDING[3]], fill='black', width=2) 
+		for i in range(5):
+			y_val = int(PADDING[0]+first_col_width+cell_width*(i+1))
+			draw.line([y_val, PADDING[2], y_val, HEIGHT-PADDING[3]], fill='black', width=2) 
+
+		r_reg = ImageFont.truetype("Roboto-Regular.ttf", FONT_SIZE)
+		r_venue = ImageFont.truetype("Roboto-Regular.ttf", int(FONT_SIZE*0.8))
+		r_bold = ImageFont.truetype("Roboto-Bold.ttf", FONT_SIZE)
+
+		draw.text([PADDING[0]+first_col_width+cell_width*0+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Mon",fill="black",font=r_reg)
+		draw.text([PADDING[0]+first_col_width+cell_width*1+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Tue",fill="black",font=r_reg)
+		draw.text([PADDING[0]+first_col_width+cell_width*2+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Wed",fill="black",font=r_reg)
+		draw.text([PADDING[0]+first_col_width+cell_width*3+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Thu",fill="black",font=r_reg)
+		draw.text([PADDING[0]+first_col_width+cell_width*4+PADDING_DAY[0],banner_height-FONT_SIZE+PADDING[2]-PADDING_DAY[1]],"Fri",fill="black",font=r_reg)
+
+		max_spans = 0
+		for d in tbl:
+			d2 = d[:-1] if d[-1]['type'] == 'empty' else d
+			span = 0
+			for l in d2:
+				span += l['span']
+			print (span)
+			max_spans = span if max_spans < span else max_spans
+
+		max_spans = max_spans + 1 if max_spans < 13 else max_spans
+
+		cell_height = int((HEIGHT - PADDING[2] - PADDING[3] - banner_height)/max_spans)
+
+		t = datetime.datetime(1,1,1,7,15)
+		period = datetime.timedelta(minutes=30)
+
+		for i in range(1, max_spans+1):
+			t += period
+			if i < max_spans:
+				draw.line([PADDING[0], PADDING[2]+banner_height+cell_height*i, WIDTH - PADDING[1], PADDING[2]+banner_height+cell_height*i], fill='black', width=2)
+			textw, texth = draw.textsize(t.strftime("%H:%M"), font=r_reg)
+			draw.text([first_col_width-textw+PADDING_TIME[0], banner_height+cell_height*(i-1) + texth + PADDING[2] - PADDING_TIME[1]], t.strftime('%H:%M'), fill='black', font=r_reg)
+
+		lsn_kinds = []
+
+		for d in tbl:
+			for l in d:
+				l['name'] = ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[0] for lsn_raw_name in l['name'])))
+				l['venue'] = ' / '.join(l['venue'])
+				if not l['name'] == '': 
+					lsn_kinds.append(l['name'])
+
+		lsn_kinds = list(set(lsn_kinds))
+		lsn_kinds = dict(zip(lsn_kinds, config.COLORS))
+
+		for d, dval in enumerate(tbl):
+			span = 0
+			for l in tbl[d]:
+				if l['type'] == 'empty':
+					span += l['span'] 
+					continue
+				draw.rectangle([
+					PADDING[0]+first_col_width+d*cell_width+PADDING_LESSON_BOX[0],
+					PADDING[2]+banner_height+cell_height*span+PADDING_LESSON_BOX[2],
+					PADDING[0]+first_col_width+(d+1)*cell_width-PADDING_LESSON_BOX[1],
+					PADDING[2]+banner_height+cell_height*(span+l['span'])-PADDING_LESSON_BOX[3]
+				], fill=lsn_kinds[l['name']])
+				from textwrap import wrap
+				draw.multiline_text([PADDING[0]+first_col_width+d*cell_width+PADDING_LESSON_BOX[0]*2,
+					PADDING[2]+banner_height+cell_height*span+PADDING_LESSON_BOX[2]*2],
+					"\n".join(wrap(l['name'], width=WRAP_WIDTH)), fill='white', font=r_bold)
+				draw.multiline_text([PADDING[0]+first_col_width+d*cell_width+PADDING_LESSON_BOX[0]*2,
+					PADDING[2]+banner_height+cell_height*span+PADDING_LESSON_BOX[2]*2+int(FONT_SIZE*(1+LINE_SPACING))],
+					"\n".join(wrap(l['venue'], width=WRAP_WIDTH)), fill='white', font=r_venue)
+				span += l['span']
+
+		timestamp = int(datetime.datetime.now().timestamp())
+		img.save('TBL_%s.png' % timestamp, format="PNG")
+		return 'TBL_%s.png' % timestamp
+
+	def _send_image(self, fname, uid, msg='', delete=False, disable_web_page_preview=None, reply_to_message_id=None, reply_markup={'hide_keyboard': True}):
+		tid = self._get_tid(uid)
+		msg = msg.splitlines()
+		payload = {'chat_id': tid, 'caption': msg, 'photo': open(fname, 'rb')}
+		if not disable_web_page_preview == None:
+			payload['disable_web_page_preview'] = disable_web_page_preview
+		if not reply_to_message_id == None:
+			payload['reply_to_message_id'] = reply_to_message_id
+		if not reply_markup == None:
+			payload['reply_markup'] = json.dumps(reply_markup, separators=(',',':'))
+
+		method = 'sendPhoto'
+		req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
+		if delete:
+			import os
+			os.remove(path)
+
 	#
 	# Commands
 	#
@@ -307,6 +473,8 @@ You can use this bot by sending the following commands.
 /announcements (LMS|AJINC) number - Show detail of one announcement. e.g.: "/announcements LMS 3"
 /sub <channel_name> - Subscribe to a channel.
 /unsub <channel_name> - Unsubscribe from a channel.
+/timetable [today|tomorrow|week [YYYYMMDD]] - Get timetable for today/tomorrow/or a week.
+/jc2rev - Get JC2 revision package.
 
 For enquires and feedback, please contact @blueset .
 """
@@ -577,6 +745,57 @@ Currently available channels are:
 		reply_markup = {'hide_keyboard': True}
 		self._send("You are now unsubscribe from %s." % msg, uid, reply_markup=reply_markup)
 
+	def timetable(self, msg, uid):
+		if not self._is_AJINC_logged_in(uid):
+			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
+			return
+		(username, password) = self._get_AJINC_un_pw(uid)
+		a = AJINCAPI(username, password)
+
+		msg = msg.split()
+		category = ['today', 'tomorrow', 'week']
+		if len(msg) == 0:
+			msg = ['today']
+		if (not msg[0] in category):
+			self._send_error(6, uid)
+			return
+		import datetime
+		if msg[0] == 'today':
+			today = datetime.date.today()
+			if today.weekday() > 4:
+				self._send("Today is weekend. Hooray!", uid)
+				return
+			tbl = a.get_timetable()
+			tbl_str = "📅 Timetable Today\nDate: %s\n\n" % today.isoformat()
+			tbl_str += self._parse_timetable_string(tbl[today.weekday()])
+			tbl_str += "\nNo more lesson afterwards."
+			self._send(tbl_str, uid)
+			return
+		if msg[0] == 'tomorrow':
+			tmr = datetime.date.tmr()+datetime.timedelta(day=1)
+			if tmr.weekday() > 4:
+				self._send("Tomorrow is weekend. Hooray!", uid)
+				return
+			tbl = a.get_timetable()
+			tbl_str = "📅 Timetable Tomorrow\nDate: %s\n\n" % tmr.isoformat()
+			tbl_str += self._parse_timetable_string(tbl[tmr.weekday()])
+			tbl_str += "\nNo more lesson afterwards."
+			self._send(tbl_str, uid)
+			return
+		if msg[0] == 'week':
+			if len(msg) > 1:
+				try:
+					d = datetime.datetime.strptime(msg[1], "%Y%m%d")
+				except ValueError:
+					self._send_error(6, uid)
+					return
+			else:
+				d = datetime.date.today()
+			tbl = a.get_timetable(d)
+			path = self._draw_timetable(tbl, d, username)
+			self._send_image(path, uid, delete=True)
+			return
+		pass
 	#
 	# Status commands
 	#
