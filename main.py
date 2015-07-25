@@ -84,7 +84,7 @@ class SvcBot:
 		"You don't play-play ah." #9 for calling on private methods
 	]
 
-	_services = ['lmsdaily', 'attendance', 'jc2rev']
+	_services = ['lmsdaily', 'attendance', 'jc2rev', 'timetable']
 
 
 	#
@@ -491,8 +491,9 @@ For enquires and feedback, please contact @blueset .
 			help_msg += "/loginlms - Login LMS account. \n"
 			keyboard[1].append("/loginlms")
 		if ajincL:
-			help_msg += "/attendance - Check your attendance for today.\n"
+			help_msg += "/attendance - Check your attendance for today.\n/timetable - Check timetable."
 			keyboard[1].append("/attendance")
+			keyboard[0].append("/timetable")
 		else:
 			help_msg += "/loginajinc - Login AJINC account.\n"
 			keyboard[1].append("/loginajinc")
