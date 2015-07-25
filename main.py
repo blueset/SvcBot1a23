@@ -282,7 +282,7 @@ class SvcBot:
 		import urllib
 		return req.json
 
-	def _parse_timetable_string(self, tbl):
+	def _parse_timetable_string(self, tbl, now=False):
 		empty = "⚪️"
 		lesson = "🔵"
 		result = ""
@@ -297,6 +297,9 @@ class SvcBot:
 			for i in range(lsn['span']):
 				t += period
 				lsn_time = t.strftime("%H:%M")
+				delta = t - datetime.datetime(1,1,1,datetime.datetime.now().hour,datetime.datetime.now().minute) 
+				if now and delta < period and delta > datetime.timedelta(minutes=0):
+					lsn_time = '🔴'
 				result += "%s %s %s\n" % (lsn_type, lsn_time, lsn_name)
 		for i in range(2):
 			t += period
@@ -767,7 +770,7 @@ Currently available channels are:
 				return
 			tbl = a.get_timetable()
 			tbl_str = "📅 Timetable Today\nDate: %s\n\n" % today.isoformat()
-			tbl_str += self._parse_timetable_string(tbl[today.weekday()])
+			tbl_str += self._parse_timetable_string(tbl[today.weekday()], now=True)
 			tbl_str += "\nNo more lesson afterwards."
 			self._send(tbl_str, uid)
 			return
@@ -799,7 +802,46 @@ Currently available channels are:
 			path = self._draw_timetable(tbl, d, username)
 			self._send_image(path, uid, delete=True)
 			return
-		pass
+	
+	def nextlesson(self, msg, uid):
+		if not self._is_AJINC_logged_in(uid):
+			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
+			return
+		(username, password) = self._get_AJINC_un_pw(uid)
+		a = AJINCAPI(username, password)
+		today = datetime.date.today()
+		if today.weekday() > 4:
+				self._send("Today is weekend. Hooray!", uid)
+				return
+		tbl = a.get_timetable()
+		now = datetime.datetime.now()
+		tbl = tbl[today.weekday()]
+		t = datetime.datetime(1,1,1,7,45)
+		now1 = datetime.datetime(1,1,1,now.hour,now.minute)
+		period = datetime.timedelta(minutes=30)
+		gotbreak = 0
+		msg = "The time now is %s.\n\n" % (now.strftime("%h:%m"))
+		for i, val in enumerate(tbl):
+			if t > now1:
+				if not val['type'] == 'empty':
+					lesson = ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in val['name'])))
+					venue = ' / '.join(val['venue'])
+					span = val['span']
+				else:
+					gotbreak = val['span']
+					lesson = ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in tbl[i+1]['name'])))
+					venue = ' / '.join(tbl[i+1]['venue'])
+					span = val['span']
+				if gotbreak > 0:
+					msg += "These's a %s-hour break after this.\n" % (gotbreak*0.5)
+				msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (lesson, venue, span*0.5, val['type'])
+				self._send(msg, uid)
+				return
+			else:
+				msg += "There're no more lessons. Hooray!"
+				self._send(msg, uid)
+				return
+		
 	#
 	# Status commands
 	#
