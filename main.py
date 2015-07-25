@@ -27,6 +27,7 @@ TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
 VERSION = "ver 1.0.5 build 20150709"
 BOT_KEY = config.BOT_KEY
+TEMP_PATH = config.TEMP_PATH
 
 # Redirect STDOUT and STDERR to logger
 class StreamToLogger(object):
@@ -426,8 +427,8 @@ class SvcBot:
 				span += l['span']
 
 		timestamp = int(datetime.datetime.now().timestamp())
-		img.save('TBL_%s.png' % timestamp, format="PNG")
-		return 'TBL_%s.png' % timestamp
+		img.save(TEMP_PATH+'TBL_%s.png' % timestamp, format="PNG")
+		return TEMP_PATH+'TBL_%s.png' % timestamp
 
 	def _send_image(self, fname, uid, msg='', delete=False, disable_web_page_preview=None, reply_to_message_id=None, reply_markup={'hide_keyboard': True}):
 		tid = self._get_tid(uid)
