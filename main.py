@@ -261,7 +261,7 @@ class SvcBot:
 		self._db.commit()
 
 	def _delete_AJINC_account(self, uid):
-		self._c.execute("DELETE FROM AJINC WHERE uid = ", (uid, ))
+		self._c.execute("DELETE FROM AJINC WHERE uid = ?", (uid, ))
 		self._db.commit()
 
 	def _get_AJINC_un_pw(self, uid):
