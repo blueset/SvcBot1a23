@@ -601,7 +601,7 @@ For enquires and feedback, please contact @blueset .
 		(username, password) = self._get_AJINC_un_pw(uid)
 		try:
 			a = AJINCAPI(username, password)
-		except AJINCAPILoginError, e:
+		except AJINCAPILoginError as e:
 			self._send_error(8, uid, error_msg=str(e)+ " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
 			self.logoutajinc('', uid)
 			a.reset_session()
