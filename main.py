@@ -299,7 +299,7 @@ class SvcBot:
 				lsn_time = t.strftime("%H:%M")
 				delta = t - datetime.datetime(1,1,1,datetime.datetime.now().hour,datetime.datetime.now().minute) 
 				if now and delta < period and delta > datetime.timedelta(minutes=0):
-					lsn_time = '🔴'
+					lsn_type = '🔴'
 				result += "%s %s %s\n" % (lsn_type, lsn_time, lsn_name)
 		for i in range(2):
 			t += period
@@ -599,7 +599,14 @@ For enquires and feedback, please contact @blueset .
 			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
 			return
 		(username, password) = self._get_AJINC_un_pw(uid)
-		a = AJINCAPI(username, password)
+		try:
+			a = AJINCAPI(username, password)
+		except AJINCAPILoginError, e:
+			self._send_error(8, uid, error_msg=str(e)+ " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+			self.logoutajinc('', uid)
+			a.reset_session()
+			return
+
 		msg = msg.split(" ")
 		if len(msg) < 2:
 			adate = datetime.today()
@@ -611,11 +618,13 @@ For enquires and feedback, please contact @blueset .
 				adate = datetime(year=datetime.today().year, month=msg[0], day=msg[1])
 			except ValueError as e:
 				self._send_error(6, uid, error_msg=str(e))
+				a.reset_session()
 				return
 
 		attendance = a.check_attendance(msg[0], msg[1])
 		datestr = adate.strftime("%a, %d %b")
 		result = "Your attendance is marked as \"%s\" on %s ." % (attendance, datestr)
+		a.reset_session()
 		self._send(result, uid)
 
 	def announcements(self, msg, uid):
@@ -753,7 +762,13 @@ Currently available channels are:
 			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
 			return
 		(username, password) = self._get_AJINC_un_pw(uid)
-		a = AJINCAPI(username, password)
+		try:
+			a = AJINCAPI(username, password)
+		except AJINCAPILoginError as e:
+			self._send_error(8, uid, error_msg=str(e)+ " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+			self.logoutajinc('', uid)
+			a.reset_session()
+			return
 
 		msg = msg.split()
 		category = ['today', 'tomorrow', 'week']
@@ -761,18 +776,21 @@ Currently available channels are:
 			msg = ['today']
 		if (not msg[0] in category):
 			self._send_error(6, uid)
+			a.reset_session()
 			return
 		import datetime
 		if msg[0] == 'today':
 			today = datetime.date.today()
 			if today.weekday() > 4:
 				self._send("Today is weekend. Hooray!", uid)
+				a.reset_session()
 				return
 			tbl = a.get_timetable()
 			tbl_str = "📅 Timetable Today\nDate: %s\n\n" % today.isoformat()
 			tbl_str += self._parse_timetable_string(tbl[today.weekday()], now=True)
 			tbl_str += "\nNo more lesson afterwards."
 			self._send(tbl_str, uid)
+			a.reset_session()
 			return
 		if msg[0] == 'tomorrow':
 			tmr = datetime.date.today()+datetime.timedelta(days=1)
@@ -782,12 +800,14 @@ Currently available channels are:
 				tbl_str += self._parse_timetable_string(tbl[0])
 				tbl_str += "\nNo more lesson afterwards."
 				self._send(tbl_str, uid)
+				a.reset_session()
 				return
 			tbl = a.get_timetable()
 			tbl_str = "📅 Timetable Tomorrow\nDate: %s\n\n" % tmr.isoformat()
 			tbl_str += self._parse_timetable_string(tbl[tmr.weekday()])
 			tbl_str += "\nNo more lesson afterwards."
 			self._send(tbl_str, uid)
+			a.reset_session()
 			return
 		if msg[0] == 'week':
 			if len(msg) > 1:
@@ -809,10 +829,17 @@ Currently available channels are:
 			self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
 			return
 		(username, password) = self._get_AJINC_un_pw(uid)
-		a = AJINCAPI(username, password)
+		try:
+			a = AJINCAPI(username, password)
+		except AJINCAPILoginError as e:
+			self._send_error(8, uid, error_msg=str(e)+ " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+			self.logoutajinc('', uid)
+			a.reset_session()
+			return
 		today = datetime.date.today()
 		if today.weekday() > 4:
 				self._send("Today is weekend. Hooray!", uid)
+				a.reset_session()
 				return
 		tbl = a.get_timetable()
 		now = datetime.datetime.now()
@@ -837,9 +864,11 @@ Currently available channels are:
 					msg += "These's a %s-hour break after this.\n" % (gotbreak*0.5)
 				msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (lesson, venue, span*0.5, val['type'])
 				self._send(msg, uid)
+				a.reset_session()
 				return
 			else:
 				msg += "There're no more lessons. Hooray!"
+				a.reset_session()
 				self._send(msg, uid)
 				return
 		
