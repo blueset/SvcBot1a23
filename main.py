@@ -848,7 +848,7 @@ Currently available channels are:
 		now1 = datetime.datetime(1,1,1,now.hour,now.minute)
 		period = datetime.timedelta(minutes=30)
 		gotbreak = 0
-		msg = "The time now is %s.\n\n" % (now.strftime("%h:%m"))
+		msg = "The time now is %s.\n\n" % (now.strftime("%H:%M"))
 		for i, val in enumerate(tbl):
 			if t > now1:
 				if not val['type'] == 'empty':
