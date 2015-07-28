@@ -297,8 +297,8 @@ class SvcBot:
 			for i in range(lsn['span']):
 				t += period
 				lsn_time = t.strftime("%H:%M")
-				delta = t - datetime.datetime(1,1,1,datetime.datetime.now().hour,datetime.datetime.now().minute) 
-				if now and delta < period and delta > datetime.timedelta(minutes=0):
+				delta = t+ period - datetime.datetime(1,1,1,datetime.datetime.now().hour,datetime.datetime.now().minute) 
+				if delta < period and delta > datetime.timedelta(minutes=0):
 					lsn_type = '🔴'
 				result += "%s %s %s\n" % (lsn_type, lsn_time, lsn_name)
 		for i in range(2):
@@ -866,11 +866,11 @@ Currently available channels are:
 				self._send(msg, uid)
 				a.reset_session()
 				return
-			else:
-				msg += "There're no more lessons. Hooray!"
-				a.reset_session()
-				self._send(msg, uid)
-				return
+			t += val['span']*period	
+		msg += "There're no more lessons. Hooray!"
+		a.reset_session()
+		self._send(msg, uid)
+		return
 		
 	#
 	# Status commands
