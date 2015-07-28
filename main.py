@@ -25,7 +25,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.0.5 build 20150709"
+VERSION = "ver 1.2.0 build 20150728"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -455,7 +455,7 @@ class SvcBot:
 	def help (self, msg, uid):
 		help_msg = r"""1A23 Service Bot
 
-@Svc1A23Bot is currently in alpha test stage. You are welcomed to provide any suggestions.
+@Svc1A23Bot is currently in beta test stage. You are welcomed to provide any suggestions.
 
 You can use this bot by sending the following commands.
 
@@ -494,7 +494,7 @@ For enquires and feedback, please contact @blueset .
 			help_msg += "/loginlms - Login LMS account. \n"
 			keyboard[1].append("/loginlms")
 		if ajincL:
-			help_msg += "/attendance - Check your attendance for today.\n/timetable - Check timetable."
+			help_msg += "/attendance - Check your attendance for today.\n/timetable - Check timetable.\n"
 			keyboard[1].append("/attendance")
 			keyboard[0].append("/timetable")
 		else:
