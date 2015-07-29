@@ -25,7 +25,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.2.0 build 20150728"
+VERSION = "ver 1.2.8 build 20150729"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -854,15 +854,17 @@ Currently available channels are:
 				if not val['type'] == 'empty':
 					lesson = ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in val['name'])))
 					venue = ' / '.join(val['venue'])
+					lsntype = val['type']
 					span = val['span']
 				else:
 					gotbreak = val['span']
 					lesson = ' / '.join(list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in tbl[i+1]['name'])))
 					venue = ' / '.join(tbl[i+1]['venue'])
+					lsntype = tbl[i+1]['type']
 					span = val['span']
 				if gotbreak > 0:
 					msg += "These's a %s-hour break after this.\n" % (gotbreak*0.5)
-				msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (lesson, venue, span*0.5, val['type'])
+				msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (lesson, venue, span*0.5, lsntype)
 				self._send(msg, uid)
 				a.reset_session()
 				return
