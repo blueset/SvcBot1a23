@@ -25,7 +25,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.3.0 build 20150904"
+VERSION = "ver 1.3.1 build 20150904"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -900,6 +900,7 @@ Currently available channels are:
 			msg += ("["+str(res.create_time)+"] " + str(res.title) +
 					"\n - - From: " + res.course_name + "/" + res.section_name +
 					"\n - - Download: " + res.url + "\n\n")
+		self._send(msg, uid)
 
 	#
 	# Status commands
