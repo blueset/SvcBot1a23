@@ -25,7 +25,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.3.1 build 20150904"
+VERSION = "ver 1.3.2 build 20150904"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -477,6 +477,7 @@ You can use this bot by sending the following commands.
 /unsub <channel_name> - Unsubscribe from a channel.
 /timetable [today|tomorrow|week [YYYYMMDD]] - Get timetable for today/tomorrow/or a week.
 /jc2rev - Get JC2 revision package.
+/searchlms keyword - Search keyword on LMS, case sensitive.
 
 For enquires and feedback, please contact @blueset .
 """
@@ -490,6 +491,7 @@ For enquires and feedback, please contact @blueset .
 		if lmsL:
 			help_msg += "/lmsdaily - Check LMS updates.\n"
 			keyboard[1].append("/lmsdaily")
+			keyboard[0].append("/searchlms")
 		else:
 			help_msg += "/loginlms - Login LMS account. \n"
 			keyboard[1].append("/loginlms")
