@@ -25,7 +25,7 @@ DEVELOPEMENT_MODE = config.DEVELOPEMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.2.8 build 20150729"
+VERSION = "ver 1.3.0 build 20150904"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -874,6 +874,33 @@ Currently available channels are:
 		self._send(msg, uid)
 		return
 		
+	def searchlms(self, msg, uid):
+		if not self._is_LMS_logged_in(uid):
+			self._send_error(7, uid, error_msg="Please login to LMS with /loginlms .")
+			return
+		if msg == "":
+			helpmsg = "/searchlms keyword\nSearch resources on LMS. e.g.:\n/searchlms chem"
+			self._send(helpmsg, uid)
+			return
+		hint_msg = "Connecting to LMS server. It may take a few seconds."
+		self._send(hint_msg, uid)
+		(puid, school) = self._get_LMS_puid_school(uid)
+
+		l = LMSAPI.LMSAPI()
+		dprint ("fetching from", puid, school)
+		l.login_pid (puid, school)
+		f = l.get_course_info()
+		c = l.parse_course_info(f)
+		r = l.find_resources_by_keyword(c, msg)
+		msg = "LMS Search [%s]\n\n" % msg
+		if len(r) == 0:
+			msg += "There is no result. Please refine your search query and check for spelling."
+		for res in r:
+			res.url = self._shortern_url(res.url)
+			msg += ("["+str(res.create_time)+"] " + str(res.title) +
+					"\n - - From: " + res.course_name + "/" + res.section_name +
+					"\n - - Download: " + res.url + "\n\n")
+
 	#
 	# Status commands
 	#
