@@ -911,6 +911,7 @@ Currently available channels are:
 
 	def tos(self, msg, uid):
 		msg = "The latest Terms of Service are available at\nhttp://svcbot.1a23.com/tos"
+		self._send(msg, uid)
 
 	#
 	# Status commands
