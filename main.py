@@ -465,6 +465,7 @@ You can use this bot by sending the following commands.
 /logoutlms - Log out from LMS.
 /loginajinc - Log into AJINC.
 /logoutajinc - Log out from AJINC.
+/tos - Show the link to the latest Terms of Service.
 /lmsdaily - Check LMS updates.
 /lmsdaily 10 - Check LMS updates in the recent 10 days. (Number of days must be between 1 and 30 inclusive.)
 /attendance - Check attendance for today.
@@ -489,7 +490,7 @@ For enquires and feedback, please contact @blueset .
 		ajincL = self._is_AJINC_logged_in(uid)
 		keyboard = [["/announcements","/help"],[]]
 		if lmsL:
-			help_msg += "/lmsdaily - Check LMS updates.\n"
+			help_msg += "/lmsdaily - Check LMS updates.\n/searchlms - Search keyword on LMS."
 			keyboard[1].append("/lmsdaily")
 			keyboard[0].append("/searchlms")
 		else:
@@ -521,6 +522,8 @@ For enquires and feedback, please contact @blueset .
 		self._send(about_msg % VERSION, uid, disable_web_page_preview=True)
 
 	def start(self, msg, uid):
+		msg = "Welcome to 1A23 Service Bot. \nTo start, please log in to your LMS and AJINC account."
+		self._send(msg, uid)
 		self.h(msg, uid)
 
 	def loginlms(self, msg, uid):
@@ -897,12 +900,17 @@ Currently available channels are:
 		msg = "LMS Search [%s]\n\n" % msg
 		if len(r) == 0:
 			msg += "There is no result. Please refine your search query and check for spelling."
-		for res in r:
+		if len(r) > 10: 
+			msg += "%s result found. Only showing the first 10 results." % len(r)
+		for res in r[:10]:
 			res.url = self._shortern_url(res.url)
 			msg += ("["+str(res.create_time)+"] " + str(res.title) +
 					"\n - - From: " + res.course_name + "/" + res.section_name +
 					"\n - - Download: " + res.url + "\n\n")
 		self._send(msg, uid)
+
+	def tos(self, msg, uid):
+		msg = "The latest Terms of Service are available at\nhttp://svcbot.1a23.com/tos"
 
 	#
 	# Status commands
