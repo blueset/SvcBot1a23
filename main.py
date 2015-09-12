@@ -476,6 +476,27 @@ class SvcBot:
             import os
             os.remove(fname)
 
+    @staticmethod
+    def _escape_tg_markdown(s):
+        import re
+        s = re.sub(r"([_*])", r"\\\1", s)
+        s = re.sub(r"\[(.*?)\]", r"\\[\1]", s)
+        return s
+
+    def _broadcast(self, msg, reply_markup={'hide_keyboard': True}):
+        lms = self._c.execute('SELECT uid FROM LMS').fetchall()
+        ajinc = self._c.execute('SELECT uid FROM AJINC').fetchall()
+        suber = self._c.execute('SELECT uid FROM config WHERE value = 1').fetchall()
+        lms = [i[0] for i in lms]
+        ajinc = [i[0] for i in ajinc]
+        suber = [i[0] for i in suber]
+        user_list = list(set(lms) | set(ajinc) | set(suber))
+
+        for uid in user_list:
+            self._send(msg, uid, reply_markup=reply_markup)
+
+        return
+        
     #
     # Commands
     #
@@ -604,6 +625,9 @@ For enquires and feedback, please contact @blueset .
             msg += "There is no update."
         for res in r:
             #res.url = self._shortern_url(res.url)
+            res.title = self._escape_tg_markdown(res.title)
+            res.course_name = self._escape_tg_markdown(res.course_name)
+            res.section_name = self._escape_tg_markdown(res.section_name)
             msg += ("[" + str(res.create_time) + "] " + "[%s](%s)" % (str(res.title), res.url) +
                     "\n - - From: " + res.course_name + "/" + res.section_name + "\n\n")
 
@@ -948,6 +972,7 @@ Currently available channels are:
         msg = "The latest Terms of Service are available at\nhttp://svcbot.1a23.com/tos"
         self._send(msg, uid)
 
+
     #
     # Status commands
     #
@@ -1022,6 +1047,15 @@ Currently available channels are:
         if msg == "":
             self._send("Sarcasm !!", uid)
 
+    def md(self, msg, uid):
+        msg = "Send me the text you want me to markdown.\n Supporting only *bold*, _italic_, and [link](url)."
+        self._set_status("_markdown_echo", uid)
+        self._send(msg, uid)
+
+    def _markdown_echo(self, msg, uid):
+        self._clear_status(uid)
+        self._send(msg, uid, parse_mode="Markdown")
+        
     #
     # Special Events
     #
@@ -1083,16 +1117,3 @@ Physics: https://goo.gl/USvVtp''',
             self._send_error(6, uid)
             return
 
-    def _broadcast(self, msg, reply_markup={'hide_keyboard': True}):
-        lms = self._c.execute('SELECT uid FROM LMS').fetchall()
-        ajinc = self._c.execute('SELECT uid FROM AJINC').fetchall()
-        suber = self._c.execute('SELECT uid FROM config WHERE value = 1').fetchall()
-        lms = [i[0] for i in lms]
-        ajinc = [i[0] for i in ajinc]
-        suber = [i[0] for i in suber]
-        user_list = list(set(lms) | set(ajinc) | set(suber))
-
-        for uid in user_list:
-            self._send(msg, uid, reply_markup=reply_markup)
-
-        return
