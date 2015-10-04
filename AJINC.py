@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 
 class AJINCAPILoginError(Exception):
+
     def __init__(self, error_message):
         self.error_message = error_message
 
@@ -43,7 +44,9 @@ class AJINCAPI(object):
             if "value" in item.attrs and item['name'].startswith('__'):
                 payload[item['name']] = item['value']
 
-        login = self.__s.post('http://ajinc.wizlearn.com/AjInc/login.aspx', data=payload)
+        login = self.__s.post(
+            'http://ajinc.wizlearn.com/AjInc/login.aspx',
+            data=payload)
         self._save_viewstate(login.text)
         loginsp = BeautifulSoup(login.text).find("font", color="Red")
         if loginsp is not None:
@@ -56,8 +59,11 @@ class AJINCAPI(object):
             if "value" in item.attrs and item['name'].startswith('__'):
                 self.__payload[item['name']] = item['value']
 
-    def check_attendance(self, months=date.today().month, day=date.today().day):
-        attendance = self.__s.get('http://ajinc.wizlearn.com/ajinc/Student/Attendance/default.aspx')
+    def check_attendance(self,
+                         months=date.today().month,
+                         day=date.today().day):
+        attendance = self.__s.get(
+            'http://ajinc.wizlearn.com/ajinc/Student/Attendance/default.aspx')
         self._save_viewstate(attendance.text)
         at = BeautifulSoup(attendance.text)
         atsp = at.find(id='ctl00_ContentArea_tblAttendance')
@@ -71,20 +77,30 @@ class AJINCAPI(object):
         filt = lambda t: t.has_attr("onclick") and t.name == "tr"
         titles = BeautifulSoup(html).find_all(filt)
         announcements = []
-        announcement = {'title': '', 'author': '', 'time': None, 'content': '', 'attachments': []}
+        announcement = {
+            'title': '',
+            'author': '',
+            'time': None,
+            'content': '',
+            'attachments': []
+        }
         attachment = {'name': '', 'link': ''}
         for title in titles:
             announcements.append(announcement.copy())
             announcements[-1]['title'] = title.find('b').text
-            announcements[-1]['time'] = datetime.strptime(title.find_all('b')[1].text, "%A, %d-%b-%Y")
+            announcements[-1]['time'] = datetime.strptime(
+                title.find_all('b')[1].text, "%A, %d-%b-%Y")
             announcements[-1]['content'] = os.linesep.join(
                 [s for s in title.find_next_sibling().text.splitlines() if s])
-            announcements[-1]['author'] = title.find_next_sibling().find_next_sibling().find('b').text[2:]
+            announcements[-1][
+                'author'
+            ] = title.find_next_sibling().find_next_sibling().find('b').text[2:]
             atts = []
             for attr in title.find_next_sibling().find_next_sibling().find_all("a"):
                 atts.append(attachment.copy())
                 atts[-1]['name'] = attr.text
-                atts[-1]['link'] = "http://ajinc.wizlearn.com" + attr.attrs['onclick'][59:-2]
+                atts[-1]['link'] = "http://ajinc.wizlearn.com" + \
+                    attr.attrs['onclick'][59:-2]
             announcements[-1]['attachments'] = atts
         # pprint(announcements[-1])
 
@@ -92,23 +108,32 @@ class AJINCAPI(object):
 
     def get_timetable(self, tdate=date.today()):
 
-        html = self.__s.get("http://ajinc.wizlearn.com/ajinc/Student/TimeTable/default.aspx")
+        html = self.__s.get(
+            "http://ajinc.wizlearn.com/ajinc/Student/TimeTable/default.aspx")
         self._save_viewstate(html.text)
         import calendar
         last_day = calendar.monthrange(tdate.year, tdate.month)[1]
         payload = {
             '__EVENTTARGET': 'ctl00$ContentArea$btnGo',
             '__EVENTARGUMENT': 'btnGo',
-            'ctl00_ContentArea_dpDate_picker_selecteddates': tdate.strftime("%Y.%-m.%-d.0.0.0"),
-            'ctl00_ContentArea_dpDate_picker_visibledate': date.today().strftime("%Y.%-m.%-d"),
-            'ctl00_ContentArea_dpDate_picker_picker': tdate.strftime("%a, %-d-%-b-%Y"),
+            'ctl00_ContentArea_dpDate_picker_selecteddates':
+            tdate.strftime("%Y.%-m.%-d.0.0.0"),
+            'ctl00_ContentArea_dpDate_picker_visibledate':
+            date.today().strftime("%Y.%-m.%-d"),
+            'ctl00_ContentArea_dpDate_picker_picker':
+            tdate.strftime("%a, %-d-%-b-%Y"),
             'ctl00_SchoolBuzzTopMenu_ContextData': '',
-            'ctl00_ContentArea_dpDate_calendar_apparentvisibledate': date.today().strftime("%Y.%-m"),
-            'ctl00_ContentArea_dpDate_calendar_selecteddates': tdate.strftime("%Y.%-m." + str(last_day)),
-            'ctl00_ContentArea_dpDate_calendar_visibledate': date.today().strftime("%Y.%-m.%-d"),
+            'ctl00_ContentArea_dpDate_calendar_apparentvisibledate':
+            date.today().strftime("%Y.%-m"),
+            'ctl00_ContentArea_dpDate_calendar_selecteddates':
+            tdate.strftime("%Y.%-m." + str(last_day)),
+            'ctl00_ContentArea_dpDate_calendar_visibledate':
+            date.today().strftime("%Y.%-m.%-d"),
         }
         payload.update(self.__payload)
-        html = self.__s.post("http://ajinc.wizlearn.com/ajinc/Student/TimeTable/default.aspx", data=payload)
+        html = self.__s.post(
+            "http://ajinc.wizlearn.com/ajinc/Student/TimeTable/default.aspx",
+            data=payload)
         self._save_viewstate(html.text)
         # html = self.__s.get("http://ajinc.wizlearn.com/ajinc/Student/TimeTable/default.aspx")
 

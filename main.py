@@ -9,7 +9,6 @@ import config
 from AJINC import AJINCAPI
 from AJINC import AJINCAPILoginError
 from LMSAPI import LMSAPI
-
 """1A23 Service Bot Telegram Bot API version"""
 __author__ = "Eana Hufwe <iLove@1a23.com>"
 
@@ -28,6 +27,7 @@ TEMP_PATH = config.TEMP_PATH
 
 # Redirect STDOUT and STDERR to logger
 class StreamToLogger(object):
+
     """
     Fake file-like stream object that redirects writes to a logger instance.
     """
@@ -49,9 +49,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='[ %(asctime)s : %(levelname)s : %(name)s ] %(message)s',
     filename=ROOT_PATH + "svcbot.log",
-    filemode='a'
-)
-
+    filemode='a')
 
 # stdout_logger = logging.getLogger('STDOUT')
 # sl = StreamToLogger(stdout_logger, logging.INFO)
@@ -68,7 +66,8 @@ def dprint(*arg):
 
 
 class SvcBot:
-    """docstring for SvcBot"""
+
+    """SvcBot Object"""
     _db = None
     _c = None
     _LMSschoolList = ['ANDERSON_JC']
@@ -86,7 +85,6 @@ class SvcBot:
     ]
 
     _services = ['lmsdaily', 'attendance', 'jc2rev', 'timetable']
-
 
     #
     # Init & Helpers
@@ -110,8 +108,12 @@ class SvcBot:
 
         if msg[:7] == "/cancel":
             self._clear_status(uid)
-            self._send("Action has been cancelled. What else can I do for you?", uid,
-                       reply_markup={'hide_keyboard': True})
+            self._send(
+                "Action has been cancelled. What else can I do for you?",
+                uid,
+                reply_markup={
+                    'hide_keyboard': True
+                })
             return
         if not self._get_status(uid) is None:
             fn = getattr(self, self._get_status(uid))
@@ -126,7 +128,8 @@ class SvcBot:
             try:
                 fn = getattr(self, para[0])
             except AttributeError as e:
-                debug_msg = str(type(e)) + "\nArgs: " + str(e.args) + "\nErr: " + str(e) + "\n"
+                debug_msg = str(type(e)) + "\nArgs: " + \
+                    str(e.args) + "\nErr: " + str(e) + "\n"
                 self._send_error(1, uid, debug_info=debug_msg)
                 return
             fn(" ".join(para[1:]), uid)
@@ -137,25 +140,34 @@ class SvcBot:
                 self.help("", uid)
 
     def _get_uid(self, tid):
-        result = self._c.execute('SELECT id FROM users WHERE tid = ?', (tid,)).fetchall()
+        result = self._c.execute(
+            'SELECT id FROM users WHERE tid = ?', (tid, )).fetchall()
         if len(result) == 0:
-            self._c.execute('INSERT INTO users (tid) VALUES (?)', (tid,))
+            self._c.execute('INSERT INTO users (tid) VALUES (?)', (tid, ))
             self._db.commit()
             return self._c.lastrowid
         else:
             return result[0][0]
 
     def _get_tid(self, uid):
-        result = self._c.execute('SELECT tid FROM users WHERE id = ?', (uid,)).fetchall()
+        result = self._c.execute(
+            'SELECT tid FROM users WHERE id = ?', (uid, )).fetchall()
         if len(result) == 0:
             self._send_error(3, uid)
             return
         return result[0][0]
 
-    def _send_error(self, error_id, uid, error_msg="", clear_status=True, debug_info=""):
+    def _send_error(
+            self,
+            error_id,
+            uid,
+            error_msg="",
+            clear_status=True,
+            debug_info=""):
         for line in traceback.format_stack():
             dprint(line.strip())
-        msg = "Error %s: %s (%s)" % (error_id, self._error_list[error_id], error_msg)
+        msg = "Error %s: %s (%s)" % (
+            error_id, self._error_list[error_id], error_msg)
         if DEVELOPMENT_MODE:
             msg += "\n\nDebug info:\n" + debug_info
         msg += "\n\nTo report any issue, please contact @blueset ."
@@ -167,12 +179,20 @@ class SvcBot:
             pass
 
     def _clear_status(self, uid):
-        self._c.execute("UPDATE users SET status = NULL, status_para = NULL WHERE id = ?", (uid,))
+        self._c.execute(
+            "UPDATE users SET status = NULL, status_para = NULL WHERE id = ?",
+            (uid, ))
         self._db.commit()
         pass
 
-    def _send(self, msg, uid, disable_web_page_preview=None, reply_to_message_id=None,
-              reply_markup={'hide_keyboard': True}, parse_mode=None):
+    def _send(
+            self,
+            msg,
+            uid,
+            disable_web_page_preview=None,
+            reply_to_message_id=None,
+            reply_markup={'hide_keyboard': True},
+            parse_mode=None):
         tid = self._get_tid(uid)
         msg = msg.splitlines()
         payload = {'chat_id': tid, 'text': msg}
@@ -181,12 +201,15 @@ class SvcBot:
         if reply_to_message_id:
             payload['reply_to_message_id'] = reply_to_message_id
         if reply_markup:
-            payload['reply_markup'] = json.dumps(reply_markup, separators=(',', ':'))
+            payload['reply_markup'] = json.dumps(
+                reply_markup,
+                separators=(',', ':'))
         if parse_mode:
             payload['parse_mode'] = parse_mode
 
         for i in range(int(len(msg) / 40)):
-            batch = "[" + str(i + 1) + "/" + str(int(len(msg) / 40) + 1) + "] \n"
+            batch = "[" + str(i + 1) + "/" + \
+                str(int(len(msg) / 40) + 1) + "] \n"
             batch += "\n".join(msg[40 * i:40 * (i + 1) - 1])
             if DEVELOPMENT_MODE:
                 batch = "![ 1A23SvcBot ]\n" + batch
@@ -194,7 +217,8 @@ class SvcBot:
             self._HTTP_req('sendMessage', payload)
 
         if int(len(msg) / 40) > 0:
-            batch = "[" + str(int(len(msg) / 40) + 1) + "/" + str(int(len(msg) / 40) + 1) + "] \n"
+            batch = "[" + str(int(len(msg) / 40) + 1) + "/" + \
+                str(int(len(msg) / 40) + 1) + "] \n"
         else:
             batch = ""
 
@@ -206,15 +230,18 @@ class SvcBot:
 
     def _set_status(self, status, uid):
         dprint("Setting status for user", uid, "to", status)
-        self._c.execute("UPDATE users SET status = ? WHERE id = ?", (status, uid,))
+        self._c.execute(
+            "UPDATE users SET status = ? WHERE id = ?", (status, uid, ))
         self._db.commit()
 
     def _get_status(self, uid):
-        result = self._c.execute('SELECT status FROM users WHERE id = ?', (uid,)).fetchall()
+        result = self._c.execute(
+            'SELECT status FROM users WHERE id = ?', (uid, )).fetchall()
         return result[0][0]
 
     def _get_status_para(self, key, uid):
-        result = self._c.execute('SELECT status_para FROM users WHERE id = ?', (uid,)).fetchall()
+        result = self._c.execute(
+            'SELECT status_para FROM users WHERE id = ?', (uid, )).fetchall()
         result = result[0][0]
         if result is None:
             return None
@@ -223,7 +250,8 @@ class SvcBot:
         return paras[key]
 
     def _set_status_para(self, key, val, uid):
-        result = self._c.execute('SELECT status_para FROM users WHERE id = ?', (uid,)).fetchall()
+        result = self._c.execute(
+            'SELECT status_para FROM users WHERE id = ?', (uid, )).fetchall()
         result = result[0][0]
         dprint("getting status para json str", result)
         if result is None:
@@ -233,62 +261,82 @@ class SvcBot:
             paras[key] = val
             json_str = json.dumps(paras)
 
-        self._c.execute("UPDATE users SET status_para = ? WHERE id = ?", (json_str, uid,))
+        self._c.execute(
+            "UPDATE users SET status_para = ? WHERE id = ?", (json_str, uid, ))
         self._db.commit()
 
     def _add_LMS_account(self, username, password, school, pid, uid):
-        self._c.execute("INSERT INTO LMS (username, password, school, puid, uid) VALUES (?, ?, ?, ?, ?)",
-                        (username, password, school, pid, uid,))
+        self._c.execute(
+            "INSERT INTO LMS (username, password, school, puid, uid) VALUES (?, ?, ?, ?, ?)",
+            (username, password, school, pid, uid, ))
         self._db.commit()
 
     def _is_LMS_logged_in(self, uid):
-        result = self._c.execute("SELECT * FROM LMS WHERE uid = ?", (uid,)).fetchall()
+        result = self._c.execute(
+            "SELECT * FROM LMS WHERE uid = ?", (uid, )).fetchall()
         if len(result) > 0:
             return True
         else:
             return False
 
     def _delete_LMS_account(self, uid):
-        self._c.execute("DELETE FROM LMS WHERE uid = ?", (uid,))
+        self._c.execute("DELETE FROM LMS WHERE uid = ?", (uid, ))
         self._db.commit()
 
     def _get_LMS_puid_school(self, uid):
-        return self._c.execute('SELECT puid, school FROM LMS WHERE uid = ?', (uid,)).fetchall()[0]
+        return self._c.execute(
+            'SELECT puid, school FROM LMS WHERE uid = ?',
+            (uid, )).fetchall()[0]
 
     def _is_AJINC_logged_in(self, uid):
-        result = self._c.execute("SELECT * FROM AJINC WHERE uid = ?", (uid,)).fetchall()
+        result = self._c.execute(
+            "SELECT * FROM AJINC WHERE uid = ?", (uid, )).fetchall()
         if (len(result) > 0):
             return True
         else:
             return False
 
     def _add_AJINC_account(self, username, password, uid):
-        self._c.execute("INSERT INTO AJINC (username, password, uid) VALUES (?, ?, ?)", (username, password, uid,))
+        self._c.execute(
+            "INSERT INTO AJINC (username, password, uid) VALUES (?, ?, ?)", (
+                username, password, uid, ))
         self._db.commit()
 
     def _delete_AJINC_account(self, uid):
-        self._c.execute("DELETE FROM AJINC WHERE uid = ?", (uid,))
+        self._c.execute("DELETE FROM AJINC WHERE uid = ?", (uid, ))
         self._db.commit()
 
     def _get_AJINC_un_pw(self, uid):
-        return self._c.execute('SELECT username, password FROM AJINC WHERE uid = ?', (uid,)).fetchall()[0]
+        return self._c.execute(
+            'SELECT username, password FROM AJINC WHERE uid = ?',
+            (uid, )).fetchall()[0]
 
     def _shortern_url(self, url):
-        return requests.post("https://www.googleapis.com/urlshortener/v1/url?key=" + GOO_GL_API_KEY,
-                             data=json.dumps({"longUrl": url}), headers={"Content-type": "application/json"}).json()[
-            'id']
+        return requests.post(
+            "https://www.googleapis.com/urlshortener/v1/url?key=" +
+            GOO_GL_API_KEY,
+            data=json.dumps(
+                {
+                    "longUrl": url
+                }),
+            headers={
+                "Content-type": "application/json"
+            }).json()['id']
         # import urllib
         # payload = {'action': 'shorturl', 'url': url, 'format': 'json'}
-        # return requests.post("http://tny.im/yourls-api.php?" + urllib.parse.urlencode(payload)).json()['shorturl']
+        # return requests.post("http://tny.im/yourls-api.php?" +
+        # urllib.parse.urlencode(payload)).json()['shorturl']
 
     def _get_subscribers(self, channel_name):
-        result = self._c.execute('SELECT uid FROM config WHERE "key" == ? AND "value" = "1"',
-                                 (channel_name,)).fetchall()
+        result = self._c.execute(
+            'SELECT uid FROM config WHERE "key" == ? AND "value" = "1"', (
+                channel_name, )).fetchall()
         return [a[0] for a in result]
 
     @staticmethod
     def _HTTP_req(method, payload):
-        req = requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
+        req = requests.post(
+            'https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), payload)
         return req.json
 
     def _parse_timetable_string(self, tbl, now=False):
@@ -303,13 +351,15 @@ class SvcBot:
         for lsn in tbl:
             lsn_type = empty if lsn['type'] == 'empty' else lesson
             lsn_name = "" if lsn['type'] == 'empty' else ' / '.join(list(
-                set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in lsn['name']))) + " @ " + ' / '.join(
-                lsn['venue'])
+                set(self._parse_lesson_name(
+                    lsn_raw_name)[1] for lsn_raw_name in
+                    lsn['name']))) + " @ " + ' / '.join(lsn['venue'])
             for i in range(lsn['span']):
                 t += period
                 lsn_time = t.strftime("%H:%M")
-                delta = t + period - datetime.datetime(1, 1, 1, datetime.datetime.now().hour,
-                                                       datetime.datetime.now().minute)
+                delta = t + period - datetime.datetime(
+                    1, 1, 1, datetime.datetime.now().hour,
+                    datetime.datetime.now().minute)
                 if period > delta > datetime.timedelta(minutes=0):
                     lsn_type = '🔴'
                 result += "%s %s %s\n" % (lsn_type, lsn_time, lsn_name)
@@ -343,56 +393,101 @@ class SvcBot:
         PADDING_DAY = [20, 20]
         PADDING_TIME = [10, 10]
         PADDING_LESSON_BOX = [8, 8, 8, 8]
-        BANNER_TEXT = "Timetable on %s for %s" % (time.strftime("%-d %b, %Y"), username)
+        BANNER_TEXT = "Timetable on %s for %s" % (
+            time.strftime("%-d %b, %Y"), username)
         BANNER_SUB = "Created with 1A23 Service Bot @Svc1A23Bot http://svcbot.1a23.com"
         WRAP_WIDTH = 12
 
-        first_col_width = int((WIDTH - PADDING[0] - PADDING[1]) / FIRST_COLUMN_FACTOR)
+        first_col_width = int(
+            (WIDTH - PADDING[0] - PADDING[1]) / FIRST_COLUMN_FACTOR)
         banner_height = int((HEIGHT - PADDING[2] - PADDING[3]) / BANNER_FACTOR)
-        cell_width = int((WIDTH - PADDING[1] - PADDING[0] - first_col_width) / 5)
-        line_spacing = int(LINE_SPACING * FONT_SIZE)
+        cell_width = int(
+            (WIDTH - PADDING[1] - PADDING[0] - first_col_width) / 5)
 
         from PIL import Image, ImageDraw, ImageFont
         img = Image.new('RGB', (WIDTH, HEIGHT), color='white')
         draw = ImageDraw.Draw(img)
 
-        b_reg = ImageFont.truetype(ROOT_PATH + "Roboto-Regular.ttf", int(BANNER_SIZE * 0.8))
+        b_reg = ImageFont.truetype(
+            ROOT_PATH + "Roboto-Regular.ttf", int(BANNER_SIZE * 0.8))
         b_bold = ImageFont.truetype(ROOT_PATH + "Roboto-Bold.ttf", BANNER_SIZE)
 
         draw.rectangle([0, 0, WIDTH, 90], fill=(87, 165, 240))
-        draw.text([BANNER_SPACING, BANNER_SPACING], BANNER_TEXT, fill='white', font=b_bold)
-        draw.text([BANNER_SPACING, BANNER_SPACING * 2 + BANNER_SIZE], BANNER_SUB, fill='white', font=b_reg)
+        draw.text([BANNER_SPACING, BANNER_SPACING],
+                  BANNER_TEXT,
+                  fill='white',
+                  font=b_bold)
+        draw.text([BANNER_SPACING, BANNER_SPACING * 2 + BANNER_SIZE],
+                  BANNER_SUB,
+                  fill='white',
+                  font=b_reg)
 
         # L, R, T, B, Banner
-        draw.line([PADDING[0], PADDING[2], PADDING[0], HEIGHT - PADDING[3]], fill='black', width=5)
-        draw.line([WIDTH - PADDING[1], PADDING[2], WIDTH - PADDING[1], HEIGHT - PADDING[3]], fill='black', width=5)
-        draw.line([PADDING[0], PADDING[2], WIDTH - PADDING[1], PADDING[2]], fill='black', width=5)
-        draw.line([PADDING[0], HEIGHT - PADDING[3], WIDTH - PADDING[1], HEIGHT - PADDING[3]], fill='black', width=5)
-        draw.line([PADDING[0], int(PADDING[2] + banner_height), WIDTH - PADDING[1], int(PADDING[2] + banner_height)],
-                  fill='black', width=5)
+        draw.line([PADDING[0], PADDING[2], PADDING[0], HEIGHT - PADDING[3]],
+                  fill='black',
+                  width=5)
+        draw.line([WIDTH - PADDING[1], PADDING[2], WIDTH - PADDING[1],
+                   HEIGHT - PADDING[3]],
+                  fill='black',
+                  width=5)
+        draw.line([PADDING[0], PADDING[2], WIDTH - PADDING[1], PADDING[2]],
+                  fill='black',
+                  width=5)
+        draw.line([PADDING[0], HEIGHT - PADDING[3], WIDTH - PADDING[1],
+                   HEIGHT - PADDING[3]],
+                  fill='black',
+                  width=5)
+        draw.line([PADDING[0], int(PADDING[2] + banner_height),
+                   WIDTH - PADDING[1], int(PADDING[2] + banner_height)],
+                  fill='black',
+                  width=5)
 
         # First column and others
-        draw.line(
-            [int(PADDING[0] + first_col_width), PADDING[2], int(PADDING[0] + first_col_width), HEIGHT - PADDING[3]],
-            fill='black', width=2)
+        draw.line([int(PADDING[0] + first_col_width), PADDING[2],
+                   int(PADDING[0] + first_col_width), HEIGHT - PADDING[3]],
+                  fill='black',
+                  width=2)
         for i in range(5):
             y_val = int(PADDING[0] + first_col_width + cell_width * (i + 1))
-            draw.line([y_val, PADDING[2], y_val, HEIGHT - PADDING[3]], fill='black', width=2)
+            draw.line([y_val, PADDING[2], y_val, HEIGHT - PADDING[3]],
+                      fill='black',
+                      width=2)
 
         r_reg = ImageFont.truetype(ROOT_PATH + "Roboto-Regular.ttf", FONT_SIZE)
-        r_venue = ImageFont.truetype(ROOT_PATH + "Roboto-Regular.ttf", int(FONT_SIZE * 0.8))
+        r_venue = ImageFont.truetype(
+            ROOT_PATH + "Roboto-Regular.ttf", int(FONT_SIZE * 0.8))
         r_bold = ImageFont.truetype(ROOT_PATH + "Roboto-Bold.ttf", FONT_SIZE)
 
-        draw.text([PADDING[0] + first_col_width + cell_width * 0 + PADDING_DAY[0],
-                   banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]], "Mon", fill="black", font=r_reg)
-        draw.text([PADDING[0] + first_col_width + cell_width * 1 + PADDING_DAY[0],
-                   banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]], "Tue", fill="black", font=r_reg)
-        draw.text([PADDING[0] + first_col_width + cell_width * 2 + PADDING_DAY[0],
-                   banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]], "Wed", fill="black", font=r_reg)
-        draw.text([PADDING[0] + first_col_width + cell_width * 3 + PADDING_DAY[0],
-                   banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]], "Thu", fill="black", font=r_reg)
-        draw.text([PADDING[0] + first_col_width + cell_width * 4 + PADDING_DAY[0],
-                   banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]], "Fri", fill="black", font=r_reg)
+        draw.text(
+            [PADDING[0] + first_col_width + cell_width * 0 + PADDING_DAY[0],
+             banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]],
+            "Mon",
+            fill="black",
+            font=r_reg)
+        draw.text(
+            [PADDING[0] + first_col_width + cell_width * 1 + PADDING_DAY[0],
+             banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]],
+            "Tue",
+            fill="black",
+            font=r_reg)
+        draw.text(
+            [PADDING[0] + first_col_width + cell_width * 2 + PADDING_DAY[0],
+             banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]],
+            "Wed",
+            fill="black",
+            font=r_reg)
+        draw.text(
+            [PADDING[0] + first_col_width + cell_width * 3 + PADDING_DAY[0],
+             banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]],
+            "Thu",
+            fill="black",
+            font=r_reg)
+        draw.text(
+            [PADDING[0] + first_col_width + cell_width * 4 + PADDING_DAY[0],
+             banner_height - FONT_SIZE + PADDING[2] - PADDING_DAY[1]],
+            "Fri",
+            fill="black",
+            font=r_reg)
 
         max_spans = 0
         for d in tbl:
@@ -404,7 +499,8 @@ class SvcBot:
 
         max_spans = max_spans + 1 if max_spans < 13 else max_spans
 
-        cell_height = int((HEIGHT - PADDING[2] - PADDING[3] - banner_height) / max_spans)
+        cell_height = int(
+            (HEIGHT - PADDING[2] - PADDING[3] - banner_height) / max_spans)
 
         t = datetime.datetime(1, 1, 1, 7, 15)
         period = datetime.timedelta(minutes=30)
@@ -412,19 +508,26 @@ class SvcBot:
         for i in range(1, max_spans + 1):
             t += period
             if i < max_spans:
-                draw.line([PADDING[0], PADDING[2] + banner_height + cell_height * i, WIDTH - PADDING[1],
-                           PADDING[2] + banner_height + cell_height * i], fill='black', width=2)
+                draw.line([PADDING[0],
+                           PADDING[2] + banner_height + cell_height * i,
+                           WIDTH - PADDING[1],
+                           PADDING[2] + banner_height + cell_height * i],
+                          fill='black',
+                          width=2)
             textw, texth = draw.textsize(t.strftime("%H:%M"), font=r_reg)
             draw.text([first_col_width - textw + PADDING_TIME[0],
-                       banner_height + cell_height * (i - 1) + texth + PADDING[2] - PADDING_TIME[1]],
-                      t.strftime('%H:%M'), fill='black', font=r_reg)
+                       banner_height + cell_height *
+                       (i - 1) + texth + PADDING[2] - PADDING_TIME[1]],
+                      t.strftime('%H:%M'),
+                      fill='black',
+                      font=r_reg)
 
         lsn_kinds = []
 
         for d in tbl:
             for l in d:
-                l['name'] = ' / '.join(
-                    list(set(self._parse_lesson_name(lsn_raw_name)[0] for lsn_raw_name in l['name'])))
+                l['name'] = ' / '.join(list(set(self._parse_lesson_name(
+                    lsn_raw_name)[0] for lsn_raw_name in l['name'])))
                 l['venue'] = ' / '.join(l['venue'])
                 if not l['name'] == '':
                     lsn_kinds.append(l['name'])
@@ -439,27 +542,53 @@ class SvcBot:
                     span += l['span']
                     continue
                 draw.rectangle([
-                    PADDING[0] + first_col_width + d * cell_width + PADDING_LESSON_BOX[0],
-                    PADDING[2] + banner_height + cell_height * span + PADDING_LESSON_BOX[2],
-                    PADDING[0] + first_col_width + (d + 1) * cell_width - PADDING_LESSON_BOX[1],
-                    PADDING[2] + banner_height + cell_height * (span + l['span']) - PADDING_LESSON_BOX[3]
-                ], fill=lsn_kinds[l['name']])
+                    PADDING[0] + first_col_width + d * cell_width +
+                    PADDING_LESSON_BOX[0], PADDING[2] + banner_height +
+                    cell_height * span + PADDING_LESSON_BOX[2],
+                    PADDING[0] + first_col_width +
+                    (d + 1) * cell_width - PADDING_LESSON_BOX[1],
+                    PADDING[2] + banner_height + cell_height *
+                    (span + l['span']) - PADDING_LESSON_BOX[3]
+                ],
+                               fill=lsn_kinds[l['name']])
                 from textwrap import wrap
-                draw.multiline_text([PADDING[0] + first_col_width + d * cell_width + PADDING_LESSON_BOX[0] * 2,
-                                     PADDING[2] + banner_height + cell_height * span + PADDING_LESSON_BOX[2] * 2],
-                                    "\n".join(wrap(l['name'], width=WRAP_WIDTH)), fill='white', font=r_bold)
-                draw.multiline_text([PADDING[0] + first_col_width + d * cell_width + PADDING_LESSON_BOX[0] * 2,
-                                     PADDING[2] + banner_height + cell_height * span + PADDING_LESSON_BOX[2] * 2 + int(
-                                         FONT_SIZE * (1 + LINE_SPACING))],
-                                    "\n".join(wrap(l['venue'], width=WRAP_WIDTH)), fill='white', font=r_venue)
+                draw.multiline_text(
+                    [
+                        PADDING[0] + first_col_width + d * cell_width +
+                        PADDING_LESSON_BOX[0] * 2, PADDING[2] + banner_height +
+                        cell_height * span + PADDING_LESSON_BOX[2] * 2
+                    ],
+                    "\n".join(
+                        wrap(
+                            l['name'],
+                            width=WRAP_WIDTH)),
+                    fill='white',
+                    font=r_bold)
+                draw.multiline_text(
+                    [PADDING[0] + first_col_width + d * cell_width +
+                     PADDING_LESSON_BOX[0] * 2,
+                     PADDING[2] + banner_height + cell_height * span +
+                     PADDING_LESSON_BOX[2] * 2 + int(FONT_SIZE *
+                                                     (1 + LINE_SPACING))],
+                    "\n".join(wrap(l['venue'],
+                                   width=WRAP_WIDTH)),
+                    fill='white',
+                    font=r_venue)
                 span += l['span']
 
         timestamp = int(datetime.datetime.now().timestamp())
         img.save(TEMP_PATH + 'TBL_%s.png' % timestamp, format="PNG")
         return TEMP_PATH + 'TBL_%s.png' % timestamp
 
-    def _send_image(self, fname, uid, msg='', delete=False, disable_web_page_preview=None, reply_to_message_id=None,
-                    reply_markup={'hide_keyboard': True}):
+    def _send_image(
+            self,
+            fname,
+            uid,
+            msg='',
+            delete=False,
+            disable_web_page_preview=None,
+            reply_to_message_id=None,
+            reply_markup={'hide_keyboard': True}):
         tid = self._get_tid(uid)
         payload = {'chat_id': tid, 'caption': msg}
         if disable_web_page_preview:
@@ -467,11 +596,18 @@ class SvcBot:
         if reply_to_message_id:
             payload['reply_to_message_id'] = reply_to_message_id
         if reply_markup:
-            payload['reply_markup'] = json.dumps(reply_markup, separators=(',', ':'))
+            payload['reply_markup'] = json.dumps(
+                reply_markup,
+                separators=(',', ':'))
 
         method = 'sendPhoto'
-        requests.post('https://api.telegram.org/bot%s/%s' % (BOT_KEY, method), files={'photo': open(fname, 'rb')},
-                      data=payload)
+        requests.post(
+            'https://api.telegram.org/bot%s/%s' % (BOT_KEY, method),
+            files={
+                'photo': open(
+                    fname, 'rb')
+            },
+            data=payload)
         if delete:
             import os
             os.remove(fname)
@@ -483,10 +619,15 @@ class SvcBot:
         s = re.sub(r"\[(.*?)\]", r"\\[\1]", s)
         return s
 
+    @staticmethod
+    def _escape_tg_md_url(s):
+        return s.replace(")", "%29")
+
     def _broadcast(self, msg, reply_markup={'hide_keyboard': True}):
         lms = self._c.execute('SELECT uid FROM LMS').fetchall()
         ajinc = self._c.execute('SELECT uid FROM AJINC').fetchall()
-        suber = self._c.execute('SELECT uid FROM config WHERE value = 1').fetchall()
+        suber = self._c.execute(
+            'SELECT uid FROM config WHERE value = 1').fetchall()
         lms = [i[0] for i in lms]
         ajinc = [i[0] for i in ajinc]
         suber = [i[0] for i in suber]
@@ -496,7 +637,7 @@ class SvcBot:
             self._send(msg, uid, reply_markup=reply_markup)
 
         return
-        
+
     #
     # Commands
     #
@@ -508,7 +649,7 @@ class SvcBot:
 
 You can use this bot by sending the following commands.
 
-*/help* - Show this help message.
+*/help* - Sho2w this help message.
 */h* - Show a concise help message.
 */loginlms* - Log into LMS.
 */logoutlms* - Log out from LMS.
@@ -531,6 +672,7 @@ You can use this bot by sending the following commands.
 
 _For enquires and feedback, please contact @blueset ._
 """
+
         self._send(help_msg, uid, parse_mode="Markdown")
 
     def h(self, msg, uid):
@@ -594,7 +736,10 @@ For enquires and feedback, please contact @blueset .
 
     def lmsdaily(self, msg, uid):
         if not self._is_LMS_logged_in(uid):
-            self._send_error(7, uid, error_msg="Please login to LMS with /loginlms .")
+            self._send_error(
+                7,
+                uid,
+                error_msg="Please login to LMS with /loginlms .")
             return
         import datetime
         delta = datetime.timedelta(-1)
@@ -602,10 +747,16 @@ For enquires and feedback, please contact @blueset .
             try:
                 days = int(msg)
             except ValueError:
-                self._send_error(6, uid, error_msg="%s is not number of days." % msg)
+                self._send_error(
+                    6,
+                    uid,
+                    error_msg="%s is not number of days." % msg)
                 return
             if days < 1 or days > 30:
-                self._send_error(6, uid, error_msg="Number of days must be between 1 and 30 inclusive.")
+                self._send_error(
+                    6,
+                    uid,
+                    error_msg="Number of days must be between 1 and 30 inclusive.")
                 return
             delta = datetime.timedelta(0 - days)
 
@@ -618,29 +769,38 @@ For enquires and feedback, please contact @blueset .
         l.login_pid(puid, school)
         f = l.get_course_info()
         c = l.parse_course_info(f)
-        r = l.find_resources_by_date(c, datetime.datetime.now() + delta, datetime.datetime.now())
-        msg = "*LMS Daily Update*\n from " + str(datetime.datetime.now() + delta) + " \nto " + str(
+        r = l.find_resources_by_date(
+            c, datetime.datetime.now() + delta, datetime.datetime.now())
+        msg = "*LMS Daily Update*\n from " + str(datetime.datetime.now(
+        ) + delta) + " \nto " + str(
             datetime.datetime.now()) + "\n\n"
         if len(r) == 0:
             msg += "There is no update."
         for res in r:
-            #res.url = self._shortern_url(res.url)
-            res.title = self._escape_tg_markdown(res.title)
+            # res.url = self._shortern_url(res.url)
+            # res.title = self._escape_tg_markdown(res.title)
             res.course_name = self._escape_tg_markdown(res.course_name)
             res.section_name = self._escape_tg_markdown(res.section_name)
-            msg += ("[" + str(res.create_time) + "] " + "[%s](%s)" % (str(res.title), res.url) +
-                    "\n - - From: " + res.course_name + "/" + res.section_name + "\n\n")
+            msg += ("[" + str(res.create_time) + "] " + "[%s](%s)" %
+                    (str(res.title), res.url) + "\n - - From: " +
+                    res.course_name + "/" + res.section_name + "\n\n")
 
-        self._send(msg, uid, disable_web_page_preview=True, parse_mode="Markdown")
+        self._send(
+            msg,
+            uid,
+            disable_web_page_preview=True,
+            parse_mode="Markdown")
 
     def loginajinc(self, msg, uid):
         if self._is_AJINC_logged_in(uid):
-            hint_msg = "You are already logged in, to log out, reply /logoutajinc ."
+            hint_msg = \
+                "You are already logged in, to log out, reply /logoutajinc ."
             self._send(hint_msg, uid)
             return
 
         self._set_status("_loginAJINCun", uid)
-        hint_msg = "Please tell me your AJINC Username, or reply /cancel to quit."
+        hint_msg = \
+            "Please tell me your AJINC Username, or reply /cancel to quit."
         self._send(hint_msg, uid)
 
     def logoutajinc(self, msg, uid):
@@ -653,14 +813,21 @@ For enquires and feedback, please contact @blueset .
     def attendance(self, msg, uid):
         from datetime import datetime
         if not self._is_AJINC_logged_in(uid):
-            self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
+            self._send_error(
+                7,
+                uid,
+                error_msg="Please login to AJINC with /loginALINC .")
             return
         (username, password) = self._get_AJINC_un_pw(uid)
         try:
             a = AJINCAPI(username, password)
         except AJINCAPILoginError as e:
-            self._send_error(8, uid, error_msg=str(
-                e) + " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+            self._send_error(
+                8,
+                uid,
+                error_msg=str(e) + " (Wrong username/password?) " +
+                "You are now logged out from AJINC. " +
+                "Please log in again. /loginajinc")
             self.logoutajinc('', uid)
             a.reset_session()
             return
@@ -673,7 +840,10 @@ For enquires and feedback, please contact @blueset .
             try:
                 msg[0] = int(msg[0])
                 msg[1] = int(msg[1])
-                adate = datetime(year=datetime.today().year, month=msg[0], day=msg[1])
+                adate = datetime(
+                    year=datetime.today().year,
+                    month=msg[0],
+                    day=msg[1])
             except ValueError as e:
                 self._send_error(6, uid, error_msg=str(e))
                 a.reset_session()
@@ -681,7 +851,8 @@ For enquires and feedback, please contact @blueset .
 
         attendance = a.check_attendance(msg[0], msg[1])
         datestr = adate.strftime("%a, %d %b")
-        result = "Your attendance is marked as \"%s\" on %s ." % (attendance, datestr)
+        result = "Your attendance is marked as \"%s\" on %s ." % (
+            attendance, datestr)
         a.reset_session()
         self._send(result, uid)
 
@@ -713,20 +884,27 @@ For enquires and feedback, please contact @blueset .
             self._send(an, uid, reply_markup=reply_markup)
             return
         else:
-            from datetime import datetime
             msg = msg.split()
             if len(msg) < 2:
-                self._send_error(6, uid, "/announcements requires 2 parameters where only %s is given" % len(msg))
+                self._send_error(
+                    6, uid,
+                    "/announcements requires 2 parameters where only %s is given"
+                    % len(msg))
                 return
             if not msg[1].isdecimal():
-                self._send_error(6, uid, "2nd parameter of /announcements must be a number, where %s is given" % msg[1])
+                self._send_error(
+                    6, uid,
+                    "2nd parameter of /announcements must be a number, where %s is given"
+                    % msg[1])
                 return
             if msg[0] == "AJINC":
                 ajincA = AJINCAPI.check_announcements()
                 mid = int(msg[1])
                 if mid >= len(ajincA):
-                    self._send_error(6, uid,
-                                     "AJINC only have %s announcements, where number %s is asked." % (len(ajincA), mid))
+                    self._send_error(
+                        6, uid,
+                        "AJINC only have %s announcements, where number %s is asked."
+                        % (len(ajincA), mid))
                     return
                 an = "AJINC announcement number %s\n\n" % mid
                 an += "Title: %s\n" % ajincA[mid]['title']
@@ -736,7 +914,8 @@ For enquires and feedback, please contact @blueset .
                 if len(ajincA[mid]['attachments']) > 0:
                     an += "\n==============\nAttachments:\n"
                 for att in ajincA[mid]['attachments']:
-                    an += "[ %s ] Link: %s \n" % (att['name'], self._shortern_url(att['link']))
+                    an += "[ %s ] Link: %s \n" % (
+                        att['name'], self._shortern_url(att['link']))
 
                 reply_markup = {'hide_keyboard': True}
                 self._send(an, uid, reply_markup=reply_markup)
@@ -751,8 +930,10 @@ For enquires and feedback, please contact @blueset .
                 lmsA = l.parse_announcements(l.get_announcements())
                 mid = int(msg[1])
                 if mid >= len(lmsA):
-                    self._send_error(6, uid,
-                                     "LMS only have %s announcements, where number %s is asked." % (len(lmsA), mid))
+                    self._send_error(
+                        6, uid,
+                        "LMS only have %s announcements, where number %s is asked."
+                        % (len(lmsA), mid))
                     return
                 an = "LMS announcement number %s\n\n" % mid
                 an += "Title: %s\n" % lmsA[mid].title
@@ -762,7 +943,8 @@ For enquires and feedback, please contact @blueset .
                 if len(lmsA[mid].attachments) > 0:
                     an += "\n==============\nAttachments:\n"
                 for att in lmsA[mid].attachments:
-                    an += "[ %s ] Link: %s \n" % (att.file_name, self._shortern_url(att.download_link))
+                    an += "[ %s ] Link: %s \n" % (
+                        att.file_name, self._shortern_url(att.download_link))
                 reply_markup = {'hide_keyboard': True}
                 self._send(an, uid, reply_markup=reply_markup)
                 return
@@ -780,12 +962,13 @@ Receive daily message from channels.
 
 Currently available channels are:
 """
+
             msg = msg + "\n".join(self._services)
             keylist = [["/sub " + svc] for svc in self._services]
             reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
             self._send(msg, uid, reply_markup=reply_markup)
             return
-        if not msg in self._services:
+        if msg not in self._services:
             error_msg = "%s is not an available service. \nYou can subscribe to the following:\n%s" % (
                 msg, "\n".join(self._services))
             self._send_error(6, uid, error_msg=error_msg)
@@ -795,38 +978,52 @@ Currently available channels are:
 ?,
 ?,
 1)"""
+
         self._c.execute(query, (uid, msg, uid, msg))
         self._db.commit()
         reply_markup = {'hide_keyboard': True}
-        self._send("You are now subscribed to %s." % msg, uid, reply_markup=reply_markup)
+        self._send(
+            "You are now subscribed to %s." % msg,
+            uid,
+            reply_markup=reply_markup)
 
     def unsub(self, msg, uid):
-        if not msg in self._services:
-            error_msg = "You can unsubscribe from the following:\n%s" % ("\n".join(self._services))
+        if msg not in self._services:
+            error_msg = "You can unsubscribe from the following:\n%s" % (
+                "\n".join(self._services))
             keylist = [["/unsub " + svc] for svc in self._services]
             reply_markup = {'keyboard': keylist, 'one_time_keyboard': True}
-            self._send(msg, uid, reply_markup=reply_markup)
+            self._send(error_msg, uid, reply_markup=reply_markup)
             return
         query = """INSERT OR REPLACE INTO config (id, uid, `key`, value) VALUES (
 (SELECT id FROM config WHERE uid = ? AND `key` = ?),
 ?,
 ?,
 0)"""
+
         self._c.execute(query, (uid, msg, uid, msg))
         self._db.commit()
         reply_markup = {'hide_keyboard': True}
-        self._send("You are now unsubscribe from %s." % msg, uid, reply_markup=reply_markup)
+        self._send("You are now unsubscribe from %s." % msg,
+                   uid,
+                   reply_markup=reply_markup)
 
     def timetable(self, msg, uid):
         if not self._is_AJINC_logged_in(uid):
-            self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
+            self._send_error(
+                7,
+                uid,
+                error_msg="Please login to AJINC with /loginALINC .")
             return
         (username, password) = self._get_AJINC_un_pw(uid)
         try:
             a = AJINCAPI(username, password)
         except AJINCAPILoginError as e:
-            self._send_error(8, uid, error_msg=str(
-                e) + " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+            self._send_error(
+                8,
+                uid,
+                error_msg=str(e) +
+                " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
             self.logoutajinc('', uid)
             a.reset_session()
             return
@@ -848,7 +1045,9 @@ Currently available channels are:
                 return
             tbl = a.get_timetable()
             tbl_str = "📅 Timetable Today\nDate: %s\n\n" % today.isoformat()
-            tbl_str += self._parse_timetable_string(tbl[today.weekday()], now=True)
+            tbl_str += self._parse_timetable_string(
+                tbl[today.weekday()],
+                now=True)
             tbl_str += "\nNo more lesson afterwards."
             self._send(tbl_str, uid)
             a.reset_session()
@@ -887,14 +1086,20 @@ Currently available channels are:
     def nextlesson(self, msg, uid):
         import datetime
         if not self._is_AJINC_logged_in(uid):
-            self._send_error(7, uid, error_msg="Please login to AJINC with /loginALINC .")
+            self._send_error(
+                7,
+                uid,
+                error_msg="Please login to AJINC with /loginALINC .")
             return
         (username, password) = self._get_AJINC_un_pw(uid)
         try:
             a = AJINCAPI(username, password)
         except AJINCAPILoginError as e:
-            self._send_error(8, uid, error_msg=str(
-                e) + " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
+            self._send_error(
+                8,
+                uid,
+                error_msg=str(e) +
+                " (Wrong username/password?) You are now logged out from AJINC. Please log in again. /loginajinc")
             self.logoutajinc('', uid)
             a.reset_session()
             return
@@ -914,21 +1119,25 @@ Currently available channels are:
         for i, val in enumerate(tbl):
             if t > now1:
                 if not val['type'] == 'empty':
-                    lesson = ' / '.join(
-                        list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in val['name'])))
+                    lesson = ' / '.join(list(set(self._parse_lesson_name(
+                        lsn_raw_name)[1] for lsn_raw_name in val['name'])))
                     venue = ' / '.join(val['venue'])
                     lsntype = val['type']
                     span = val['span']
                 else:
                     gotbreak = val['span']
-                    lesson = ' / '.join(
-                        list(set(self._parse_lesson_name(lsn_raw_name)[1] for lsn_raw_name in tbl[i + 1]['name'])))
+                    lesson = ' / '.join(list(set(self._parse_lesson_name(
+                        lsn_raw_name)[
+                            1
+                        ] for lsn_raw_name in tbl[i + 1]['name'])))
                     venue = ' / '.join(tbl[i + 1]['venue'])
                     lsntype = tbl[i + 1]['type']
                     span = val['span']
                 if gotbreak > 0:
-                    msg += "These's a %s-hour break after this.\n" % (gotbreak * 0.5)
-                msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (lesson, venue, span * 0.5, lsntype)
+                    msg += "These's a %s-hour break after this.\n" % (
+                        gotbreak * 0.5)
+                msg += "Next Lesson is %s at %s. It's a %s-hour %s." % (
+                    lesson, venue, span * 0.5, lsntype)
                 self._send(msg, uid)
                 a.reset_session()
                 return
@@ -940,7 +1149,10 @@ Currently available channels are:
 
     def searchlms(self, msg, uid):
         if not self._is_LMS_logged_in(uid):
-            self._send_error(7, uid, error_msg="Please login to LMS with /loginlms .")
+            self._send_error(
+                7,
+                uid,
+                error_msg="Please login to LMS with /loginlms .")
             return
         if msg == "":
             helpmsg = "/searchlms keyword\nSearch resources on LMS. e.g.:\n/searchlms chem"
@@ -960,18 +1172,18 @@ Currently available channels are:
         if len(r) == 0:
             msg += "There is no result. Please refine your search query and check for spelling."
         if len(r) > 10:
-            msg += "%s result found. Only showing the first 10 results." % len(r)
+            msg += "%s result found. Only showing the first 10 results." % len(
+                r)
         for res in r[:10]:
             res.url = self._shortern_url(res.url)
             msg += ("[" + str(res.create_time) + "] " + str(res.title) +
-                    "\n - - From: " + res.course_name + "/" + res.section_name +
-                    "\n - - Download: " + res.url + "\n\n")
+                    "\n - - From: " + res.course_name + "/" + res.section_name
+                    + "\n - - Download: " + res.url + "\n\n")
         self._send(msg, uid)
 
     def tos(self, msg, uid):
         msg = "The latest Terms of Service are available at\nhttp://svcbot.1a23.com/tos"
         self._send(msg, uid)
-
 
     #
     # Status commands
@@ -1030,7 +1242,7 @@ Currently available channels are:
         username = self._get_status_para("AJINCun", uid)
         password = msg
         try:
-            a = AJINCAPI(username, password)
+            AJINCAPI(username, password)
         except AJINCAPILoginError as e:
             self._send_error(8, uid, error_msg=str(e))
             return
@@ -1055,13 +1267,13 @@ Currently available channels are:
     def _markdown_echo(self, msg, uid):
         self._clear_status(uid)
         self._send(msg, uid, parse_mode="Markdown")
-        
+
     #
     # Special Events
     #
 
     def jc2rev(self, msg, uid):
-        kit = [r'''0. JC2 Chem/Physics/Math Revision Calendar 
+        kit = [r'''0. JC2 Chem/Physics/Math Revision Calendar
 Question list are included.
 Available for Chem Band 2 (Audi Group), Physics Group 2 (Audi Group), Math Band B (Audi Group).
 Tutorials are labeled as:
@@ -1075,8 +1287,7 @@ https://goo.gl/9Bx5G4
 Import it to your own calendar:
 Chem: https://goo.gl/GdFc9A
 Math: https://goo.gl/DRkky9
-Physics: https://goo.gl/USvVtp''',
-               r'''1. Online Resources Package
+Physics: https://goo.gl/USvVtp''', r'''1. Online Resources Package
   a. H2 Chemistry
     P1 Feedback Qn: http://goo.gl/R3YKGY
     Soln.: http://goo.gl/7Cs2c4
@@ -1102,8 +1313,12 @@ Physics: https://goo.gl/USvVtp''',
        Set 8: http://goo.gl/d1kMFO''']
         if msg == '':
             replymsg = "JC2 Revision Package is now available. Reply to see more details. \nTo get updates on the package, please reply \n/sub jc2rev"
-            keylist = [['/jc2rev 0 JC2 Chem/Physics/Math Revision Calendar '], ['/jc2rev 1 Online Resources Package'],
-                       ['/sub jc2rev'], ['/cancel']]
+            keylist = [
+                ['/jc2rev 0 JC2 Chem/Physics/Math Revision Calendar'],
+                ['/jc2rev 1 Online Resources Package'],
+                ['/sub jc2rev'],
+                ['/cancel']
+            ]
             reply_markup = {"keyboard": keylist, "one_time_keyboard": True}
             self._send(replymsg, uid, reply_markup=reply_markup)
             return
@@ -1116,4 +1331,3 @@ Physics: https://goo.gl/USvVtp''',
         else:
             self._send_error(6, uid)
             return
-
