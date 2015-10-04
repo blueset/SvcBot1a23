@@ -20,7 +20,7 @@ DEVELOPMENT_MODE = config.DEVELOPMENT_MODE
 TELEGRAM_DIR = config.TELEGRAM_DIR
 TELEGRAM_CERT = config.TELEGRAM_CERT
 SELF = config.SELF
-VERSION = "ver 1.3.2 build 20150904"
+VERSION = "ver 1.3.4 build 20151004"
 BOT_KEY = config.BOT_KEY
 TEMP_PATH = config.TEMP_PATH
 
@@ -782,7 +782,7 @@ For enquires and feedback, please contact @blueset .
             res.course_name = self._escape_tg_markdown(res.course_name)
             res.section_name = self._escape_tg_markdown(res.section_name)
             msg += ("[" + str(res.create_time) + "] " + "[%s](%s)" %
-                    (str(res.title), res.url) + "\n - - From: " +
+                    (str(res.title), self._escape_tg_md_url(res.url)) + "\n - - From: " +
                     res.course_name + "/" + res.section_name + "\n\n")
 
         self._send(
