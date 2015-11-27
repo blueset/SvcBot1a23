@@ -101,6 +101,7 @@ class SvcBot:
         except:
             return
 
+        uid = self._get_uid(tid)
         # Debug info
         msg = """Happy holiday!
 
@@ -113,7 +114,7 @@ Eana Hufwe < @blueset >
 End of 2015
 """
 
-        self.send(msg, uid)
+        self._send(msg, uid)
 
     def _get_uid(self, tid):
         result = self._c.execute(
