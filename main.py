@@ -106,7 +106,7 @@ class SvcBot:
         msg = """Happy holiday!
 
 Thank you for your support to 1A23 Service Bot. We are now looking for maintainers!
-If you are, or you know any of your juniors, who are interested in programming and willing to contribute to this project, please do not hesitate to contact @blueset . Otherwise, you can directly check the source code at https://github.com/blueset/1a23svcbot . We are waiting for you!
+If you are, or you know any of your juniors, who are interested in programming and willing to contribute to this project, please do not hesitate to contact @blueset . Otherwise, you can directly check the source code at https://github.com/blueset/svcbot1a23 . We are waiting for you!
 Meanwhile, @Svc1A23Bot is suspended until new maintainers are found.
 
 We wish you a happy holiday and a happy new year!
